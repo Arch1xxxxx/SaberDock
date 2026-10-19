@@ -28,7 +28,7 @@ Using SaberDock may conflict with these restrictions or other applicable store a
 ## Requirements
 
 - An Apple Silicon Mac running macOS 14 or later.
-- **Install and configure [AVP Play](https://github.com/myMartek/avp-play) first.** Prepare your purchased Beat Saber game and complete an installation on Vision Pro. Keep the generated visionOS app, APK, OBB, and game data folder locally. SaberDock does not filter game versions; custom-library processing still requires a compatible resource structure.
+- **Install and configure [AVP Play](https://github.com/myMartek/avp-play) first.** Prepare your purchased Beat Saber game and complete an installation on Vision Pro. Keep the generated visionOS app, APK, OBB, and game data folder locally. Complete at least one build of your selected game version with the selected toolchain in AVP Play. You can try locally available versions, including newer releases; **1.40.8** is the option tested by the SaberDock developer.
 - Xcode with a visionOS SDK compatible with your AVP Play toolchain, signed in to your own Apple development account. Complete an AVP Play installation first.
 - Your Apple Vision Pro paired with Xcode, with Developer Mode enabled, unlocked, and connected to the same network as the Mac.
 - Free space for local processing and the generated library.
@@ -84,7 +84,13 @@ Map errors identify the affected song. Resolve or remove unsupported maps before
 
 ## Game files and versions
 
-Game version names and internal version codes do not block installation. Missing files produce a specific error instead of permanently disabling Install. The two dropdowns list locally available downloads and toolchains. If the selected combination has no generated game app or data, complete that game installation with the chosen toolchain in AVP Play first. Versions are not all verified: if the selected files lack the resource structure needed by the converter, processing stops before the headset is changed. Selecting a different app or game data causes the next update to sync the complete selected program and library.
+SaberDock lets you choose game versions and toolchains already present in AVP Play’s local folders. It does not impose a game-version allowlist. In principle, the latest version available through AVP Play may also work, provided AVP Play can build it and its resources are compatible with SaberDock. Newer versions are not all tested, so successful installation and gameplay are not guaranteed.
+
+If a newer version does not work for you, choose **Beat Saber 1.40.8**, which has been tested by the SaberDock developer. This is a tested option, not a mandatory version.
+
+**Before using any version, including 1.40.8, complete at least one build of that game version with your chosen toolchain in AVP Play.** Keep the generated visionOS app and associated game files locally; downloading the APK and OBB alone is not enough. If the matching build is missing, return to AVP Play to build it, then refresh the list in SaberDock.
+
+If the selected files lack the resource structure needed for custom-library processing, SaberDock stops before changing the headset. Changing the selected game or toolchain causes the next update to sync the complete selected program and library.
 
 ## Supported maps
 

@@ -28,7 +28,7 @@ SaberDock 会修改本地 Beat Saber 游戏资源，并复用 AVP Play 已经生
 ## 使用前准备
 
 - Apple Silicon Mac，macOS 14 或更新版本。
-- **先安装并配置 [AVP Play](https://github.com/myMartek/avp-play)**，准备你已购买的 Beat Saber 并完成一次 Vision Pro 安装。请在本机保留生成的 visionOS 应用、APK、OBB 和游戏数据文件夹。SaberDock 不按游戏版本筛选；自定义曲库处理仍需要兼容的资源结构。
+- **先安装并配置 [AVP Play](https://github.com/myMartek/avp-play)**，准备你已购买的 Beat Saber 并完成一次 Vision Pro 安装。请在本机保留生成的 visionOS 应用、APK、OBB 和游戏数据文件夹。所选游戏版本须先在 AVP Play 中使用所选 Toolchain 至少完成一次构建。可以尝试本地已有版本，包括较新版本；**1.40.8** 是经过 SaberDock 开发者测试的可选版本。
 - 已登录自己 Apple 开发账户的 Xcode，及与 AVP Play 工具链兼容的 visionOS SDK。请先通过 AVP Play 完成一次安装。
 - 你自己的 Apple Vision Pro，已与 Xcode 配对并开启开发者模式，保持解锁，与 Mac 连接同一网络。
 - 足够的本机空间，用于歌曲处理与生成曲库。
@@ -84,7 +84,13 @@ SaberDock 使用通过 AVP Play 从 Meta 下载的游戏文件和你自己的签
 
 ## 游戏文件与版本
 
-游戏版本名和内部版本编号不会阻止安装。缺少文件时会给出具体错误，安装按钮不会因自动识别失败而一直禁用。两个下拉框列出本地已有的游戏下载和工具链。若所选组合缺少生成的游戏程序或数据，请先在 AVP Play 使用所选工具链完成该游戏版本的安装。不限制版本不代表所有版本都已验证：如果所选文件缺少转换器需要的资源结构，会在修改头显前停止处理。更换游戏应用或程序数据后，下次更新会完整同步所选程序和曲库。
+SaberDock 可以选择 AVP Play 本地文件夹中已有的游戏版本和 Toolchain，不按游戏版本设置白名单。理论上，通过 AVP Play 获取的最新版本也可以尝试安装，前提是 AVP Play 能够完成构建，且游戏资源与 SaberDock 兼容。较新版本尚未全部测试，因此不能保证都能成功安装和游玩。
+
+如果较新版本不适用，可以选择 **Beat Saber 1.40.8**，该版本已经过 SaberDock 开发者测试。这是经过测试的可选版本，并非强制要求。
+
+**使用任何版本（包括 1.40.8）前，都必须先在 AVP Play 中，用所选 Toolchain 对该游戏版本至少完成一次构建。** 请在本机保留生成的 visionOS 应用及对应游戏文件；仅下载 APK 和 OBB 并不足够。若缺少对应构建，请先返回 AVP Play 完成构建，再在 SaberDock 中刷新列表。
+
+如果所选文件缺少自定义曲库处理所需的资源结构，SaberDock 会在修改头显前停止处理。更换所选游戏或 Toolchain 后，下次更新会完整同步所选程序和曲库。
 
 ## 谱面兼容范围
 

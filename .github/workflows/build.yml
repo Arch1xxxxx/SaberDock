@@ -26,24 +26,41 @@ jobs:
             dist/SHA256SUMS.txt
           if-no-files-found: error
   release:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || contains(github.event.head_commit.message, '[release]'))
     needs: mac
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: SaberDock-macOS-arm64
           path: dist
-      - name: Publish preview release
+      - name: Publish official release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
+          VERSION=$(jq -r .version package.json)
+          RELEASE_TAG="v${VERSION}"
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             RELEASE_TAG="${GITHUB_REF#refs/tags/}"
-          else
-            RELEASE_TAG="preview-${GITHUB_SHA:0:7}"
           fi
-          gh release create "$RELEASE_TAG" dist/*.zip dist/*.dmg dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "SaberDock $RELEASE_TAG" --generate-notes --prerelease
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/*.zip dist/*.dmg dist/SHA256SUMS.txt --clobber
+            gh release edit "$RELEASE_TAG" --title "SaberDock ${VERSION}" --notes-file docs/RELEASE.md --draft=false --prerelease=false --latest
+          else
+            gh release create "$RELEASE_TAG" dist/*.zip dist/*.dmg dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "SaberDock ${VERSION}" --notes-file docs/RELEASE.md --latest
+          fi
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | sort > published-assets.txt
+          printf '%s\n' "SaberDock-${VERSION}-macOS-arm64.dmg" "SaberDock-${VERSION}-macOS-arm64.zip" SHA256SUMS.txt | sort > expected-assets.txt
+          diff -u expected-assets.txt published-assets.txt
+          if [[ "$RELEASE_TAG" == "v1.0.0" ]]; then
+            gh api --paginate "repos/${GH_REPO}/releases" --jq '.[].tag_name' > releases.txt
+            while IFS= read -r OLD_TAG; do
+              if [[ "$OLD_TAG" != "$RELEASE_TAG" ]]; then
+                gh release delete "$OLD_TAG" --yes --cleanup-tag
+              fi
+            done < releases.txt
+          fi

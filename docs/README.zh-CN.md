@@ -8,14 +8,12 @@
 
 ## 可以做什么
 
-- 拖入谱面 ZIP 或已解压的谱面文件夹，每个子文件夹对应头显中的一个曲包。
-- 保留受支持谱面的封面、光剑／方块配色与 Standard 标准双剑难度。
-- 删除、恢复和排列歌曲，或按歌名、歌手、谱师排序。
-- 只重新处理新增或改动的谱面，一键更新头显曲库。
-- 自定义头显应用名称，使用自己的 Apple 开发账户签名。
-- 默认使用英文界面，可在工具栏切换为简体中文。
-
-曲库变化后，同步仍会传输完整的曲库资源文件；已处理的歌曲会复用缓存，曲库未变化时跳过重复处理和传输。
+- 拖入谱面 ZIP 或已解压的谱面文件夹，直接导入歌曲。
+- 用 Mac 上的文件夹整理歌曲，每个文件夹对应头显中的一个曲包。
+- 浏览歌曲封面、歌手、谱师与可用难度，在头显中保留受支持谱面的封面和配色。
+- 删除、恢复和手动排列歌曲，也可按歌名、歌手或谱师排序。
+- 为 Vision Pro 安装独立的自定义内容应用，一键更新头显曲库。
+- 自定义头显应用名称，并在英文与简体中文界面间切换。
 
 ## 使用前准备
 
@@ -93,6 +91,8 @@ python3 scripts/build_app.py
 
 ## 所有权、商标与许可
 
+感谢 [AVP Play](https://github.com/myMartek/avp-play)、[Klepton](https://github.com/shinyquagsire23/Klepton)、UnityPy 和 bsmap。
+
 SaberDock 是独立社区工具，与 Meta、Beat Games、Apple、AVP Play、Klepton 没有隶属、认可或赞助关系。**文中提及的所有商标、产品名称、标志及其他标识均属于其各自的原所有人。** 使用这些名称仅为说明兼容产品和依赖，不主张拥有相关商标。
 
-源码采用 [MIT License](../LICENSE)。依赖许可见 [第三方说明](../THIRD-PARTY.md)。感谢 [AVP Play](https://github.com/myMartek/avp-play)、[Klepton](https://github.com/shinyquagsire23/Klepton)、UnityPy 和 bsmap。
+源码采用 [MIT License](../LICENSE)。依赖许可见 [第三方说明](../THIRD-PARTY.md)。

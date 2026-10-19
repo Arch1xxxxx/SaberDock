@@ -8,14 +8,12 @@ A Mac app for organizing custom Beat Saber maps and updating a separate custom-c
 
 ## What you can do
 
-- Drag map ZIP files or extracted map folders into a library. Each subfolder becomes a headset playlist.
-- Keep supported map covers, saber/block colors, and Standard two-saber difficulties.
-- Remove and restore songs, reorder them, or sort by title, artist, or mapper.
-- Process only new or changed maps, then update the headset with one button.
-- Choose the headset app name and use your own Apple development account for signing.
-- Use the interface in English (default) or Simplified Chinese, selected from the toolbar.
-
-When the library changes, syncing transfers the complete generated library resource. Previously processed songs are reused; an unchanged library skips repeat processing and transfer.
+- Import map ZIP files or extracted map folders by dragging them into the app.
+- Organize songs into playlists using folders on your Mac.
+- Browse song covers, artists, mappers, and available difficulties, with supported map covers and colors preserved on the headset.
+- Delete and restore songs, arrange them manually, or sort by title, artist, or mapper.
+- Install a separate custom-content app on Vision Pro and update its library with one button.
+- Choose your headset app name and switch between English and Simplified Chinese.
 
 ## Requirements
 
@@ -93,9 +91,11 @@ The build downloads checksum-pinned portable Python and Node runtimes and locked
 
 ## Ownership, trademarks, and license
 
+Thanks to [AVP Play](https://github.com/myMartek/avp-play), [Klepton](https://github.com/shinyquagsire23/Klepton), UnityPy, and bsmap.
+
 SaberDock is an independent community tool and is not affiliated with, endorsed by, or sponsored by Meta, Beat Games, Apple, AVP Play, or Klepton. **All trademarks, product names, logos, and other marks mentioned belong to their respective owners.** The names identify compatible products and dependencies; no ownership of those marks is claimed.
 
-The source is licensed under the [MIT License](LICENSE). See [third-party notices](THIRD-PARTY.md) for dependency licenses. Thanks to [AVP Play](https://github.com/myMartek/avp-play), [Klepton](https://github.com/shinyquagsire23/Klepton), UnityPy, and bsmap.
+The source is licensed under the [MIT License](LICENSE). See [third-party notices](THIRD-PARTY.md) for dependency licenses.
 
 ---
 
@@ -107,14 +107,12 @@ The source is licensed under the [MIT License](LICENSE). See [third-party notice
 
 ## 可以做什么
 
-- 拖入谱面 ZIP 或已解压的谱面文件夹，每个子文件夹对应头显中的一个曲包。
-- 保留受支持谱面的封面、光剑／方块配色与 Standard 标准双剑难度。
-- 删除、恢复和排列歌曲，或按歌名、歌手、谱师排序。
-- 只重新处理新增或改动的谱面，一键更新头显曲库。
-- 自定义头显应用名称，使用自己的 Apple 开发账户签名。
-- 默认使用英文界面，可在工具栏切换为简体中文。
-
-曲库变化后，同步仍会传输完整的曲库资源文件；已处理的歌曲会复用缓存，曲库未变化时跳过重复处理和传输。
+- 拖入谱面 ZIP 或已解压的谱面文件夹，直接导入歌曲。
+- 用 Mac 上的文件夹整理歌曲，每个文件夹对应头显中的一个曲包。
+- 浏览歌曲封面、歌手、谱师与可用难度，在头显中保留受支持谱面的封面和配色。
+- 删除、恢复和手动排列歌曲，也可按歌名、歌手或谱师排序。
+- 为 Vision Pro 安装独立的自定义内容应用，一键更新头显曲库。
+- 自定义头显应用名称，并在英文与简体中文界面间切换。
 
 ## 使用前准备
 
@@ -192,6 +190,8 @@ python3 scripts/build_app.py
 
 ## 所有权、商标与许可
 
+感谢 [AVP Play](https://github.com/myMartek/avp-play)、[Klepton](https://github.com/shinyquagsire23/Klepton)、UnityPy 和 bsmap。
+
 SaberDock 是独立社区工具，与 Meta、Beat Games、Apple、AVP Play、Klepton 没有隶属、认可或赞助关系。**文中提及的所有商标、产品名称、标志及其他标识均属于其各自的原所有人。** 使用这些名称仅为说明兼容产品和依赖，不主张拥有相关商标。
 
-源码采用 [MIT License](LICENSE)。依赖许可见 [第三方说明](THIRD-PARTY.md)。感谢 [AVP Play](https://github.com/myMartek/avp-play)、[Klepton](https://github.com/shinyquagsire23/Klepton)、UnityPy 和 bsmap。
+源码采用 [MIT License](LICENSE)。依赖许可见 [第三方说明](THIRD-PARTY.md)。

@@ -8,14 +8,12 @@ A Mac app for organizing custom Beat Saber maps and updating a separate custom-c
 
 ## What you can do
 
-- Drag map ZIP files or extracted map folders into a library. Each subfolder becomes a headset playlist.
-- Keep supported map covers, saber/block colors, and Standard two-saber difficulties.
-- Remove and restore songs, reorder them, or sort by title, artist, or mapper.
-- Process only new or changed maps, then update the headset with one button.
-- Choose the headset app name and use your own Apple development account for signing.
-- Use the interface in English (default) or Simplified Chinese, selected from the toolbar.
-
-When the library changes, syncing transfers the complete generated library resource. Previously processed songs are reused; an unchanged library skips repeat processing and transfer.
+- Import map ZIP files or extracted map folders by dragging them into the app.
+- Organize songs into playlists using folders on your Mac.
+- Browse song covers, artists, mappers, and available difficulties, with supported map covers and colors preserved on the headset.
+- Delete and restore songs, arrange them manually, or sort by title, artist, or mapper.
+- Install a separate custom-content app on Vision Pro and update its library with one button.
+- Choose your headset app name and switch between English and Simplified Chinese.
 
 ## Requirements
 
@@ -93,6 +91,8 @@ The build downloads checksum-pinned portable Python and Node runtimes and locked
 
 ## Ownership, trademarks, and license
 
+Thanks to [AVP Play](https://github.com/myMartek/avp-play), [Klepton](https://github.com/shinyquagsire23/Klepton), UnityPy, and bsmap.
+
 SaberDock is an independent community tool and is not affiliated with, endorsed by, or sponsored by Meta, Beat Games, Apple, AVP Play, or Klepton. **All trademarks, product names, logos, and other marks mentioned belong to their respective owners.** The names identify compatible products and dependencies; no ownership of those marks is claimed.
 
-The source is licensed under the [MIT License](../LICENSE). See [third-party notices](../THIRD-PARTY.md) for dependency licenses. Thanks to [AVP Play](https://github.com/myMartek/avp-play), [Klepton](https://github.com/shinyquagsire23/Klepton), UnityPy, and bsmap.
+The source is licensed under the [MIT License](../LICENSE). See [third-party notices](../THIRD-PARTY.md) for dependency licenses.

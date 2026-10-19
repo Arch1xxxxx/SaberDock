@@ -28,7 +28,7 @@ Using SaberDock may conflict with these restrictions or other applicable store a
 ## Requirements
 
 - An Apple Silicon Mac running macOS 14 or later.
-- **Install and configure [AVP Play](https://github.com/myMartek/avp-play) first.** Use the Meta account that owns Beat Saber to prepare **Beat Saber 1.40.8** and its local toolchain through AVP Play. Version names such as `1.40.8_12345` are accepted; internal version codes and OBB filenames are detected automatically. Other game versions, including 1.45, are not supported.
+- **Install and configure [AVP Play](https://github.com/myMartek/avp-play) first.** Prepare your purchased Beat Saber game and complete an installation on Vision Pro. Keep the generated visionOS app, APK, OBB, and game data folder locally. SaberDock does not filter game versions; custom-library processing still requires a compatible resource structure.
 - Xcode with a visionOS SDK compatible with your AVP Play toolchain, signed in to your own Apple development account. Complete an AVP Play installation first.
 - Your Apple Vision Pro paired with Xcode, with Developer Mode enabled, unlocked, and connected to the same network as the Mac.
 - Free space for local processing and the generated library.
@@ -40,8 +40,8 @@ A Quest headset is not required. SaberDock does not sign in to Meta, download ga
 **AVP Play must be installed and set up before you use SaberDock.**
 
 1. Install [AVP Play](https://github.com/myMartek/avp-play) on your Mac and follow its setup guide.
-2. In AVP Play, connect the Meta account that owns **Beat Saber 1.40.8**. Follow AVP Play's guide to verify your purchase and prepare the game files supplied by Meta.
-3. Complete a game installation with AVP Play and confirm it can launch on your Vision Pro. Keep AVP Play's local app build and downloaded game files. SaberDock reuses that matching build; it does not translate the game or rebuild its executable. If the build is missing, return to AVP Play and complete the installation there first. Then install SaberDock below.
+2. In AVP Play, connect the Meta account that owns **Beat Saber**. Follow AVP Play's guide to verify your purchase and prepare the game files supplied by Meta.
+3. Complete a game installation with AVP Play and confirm it can launch on your Vision Pro. Keep AVP Play's local app build and downloaded game files. SaberDock reuses the build you select; it does not translate the game or rebuild its executable. If the app is missing, complete the installation in AVP Play first. Then install SaberDock below.
 
 ## Install SaberDock on your Mac
 
@@ -53,7 +53,7 @@ The app is locally signed and is not notarized by Apple. If macOS blocks the fir
 
 ## Set up and install on your headset
 
-1. Open **Installation Settings**. Check the detected AVP Play app, data folder, downloads folder, and your Apple Team ID. You can choose paths manually. The team ID is also available in Xcode → Settings → Accounts.
+1. Open **Installation Settings** and select the local **Vision Pro App (.app)**, **Game APK**, **Game OBB**, and **Game Data** folder. The app must be the game built for Vision Pro, not the Mac AVP Play.app. The data folder contains `assets` and `AndroidManifest.xml`; SaberDock will try to locate it beside the selected app. Automatic discovery is optional, and files may be stored elsewhere. Enter your Apple Team ID, then click **Save and Check**. The team ID is available in Xcode → Settings → Accounts.
 2. Create at least two playlist folders and add at least one supported map to each. The default location is `~/Music/SaberDock Library`; the default headset app name is **SaberDock Custom Songs**. These defaults stay in English regardless of interface language. You can choose a different library location and app name.
 3. Keep the headset unlocked, select your Vision Pro, and click **Install**. SaberDock prepares and signs the separate app locally, then installs the app and required data on your headset.
 4. Open **SaberDock Custom Songs**, or the name you chose, on the headset.
@@ -81,6 +81,10 @@ Each immediate subfolder is a playlist. Drop maps into a playlist folder in Find
 - **Build Library Only** prepares and verifies the library on the Mac without syncing.
 
 Map errors identify the affected song. Resolve or remove unsupported maps before updating. Back up your whole library, including `.beatsaber-library.json`, to retain playlists and management records.
+
+## Game files and versions
+
+Game version names and internal version codes do not block installation. Missing files produce a specific error instead of permanently disabling Install. Choose files from the same local game installation. Versions are not all verified: if the selected files lack the resource structure needed by the converter, processing stops before the headset is changed. Selecting a different app or game data causes the next update to sync the complete selected program and library.
 
 ## Supported maps
 

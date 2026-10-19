@@ -1,4 +1,4 @@
-# SaberDock 1.0.2
+# SaberDock 1.0.3
 
 Organize custom Beat Saber maps on your Mac and sync playlists to Apple Vision Pro using your own AVP Play game files.
 
@@ -10,7 +10,7 @@ Organize custom Beat Saber maps on your Mac and sync playlists to Apple Vision P
 
 **Prepare at least two nonempty playlists before installing or updating. Each needs at least one supported map. A single playlist cannot reach the headset main menu.**
 
-Requires an Apple Silicon Mac with macOS 14 or later, Xcode with a compatible visionOS SDK, a paired Vision Pro, and a completed Beat Saber 1.40.8 installation through AVP Play, with its matching visionOS app build retained on your Mac. SaberDock reuses that app; it does not translate or rebuild the game executable.
+Requires an Apple Silicon Mac with macOS 14 or later, Xcode with a compatible visionOS SDK, a paired Vision Pro, and your own game files prepared through AVP Play. Select the local visionOS game app, APK, OBB, and game data folder in Installation Settings. Game versions are not filtered; the converter checks the selected resource structure before changing the headset. SaberDock reuses the selected app and does not translate or rebuild the game executable.
 
 Download the DMG, drag SaberDock into Applications, then follow the [user guide](https://github.com/Arch1xxxxx/SaberDock#readme). The app is locally signed and is not Apple-notarized. ZIP and SHA-256 checksums are also provided.
 

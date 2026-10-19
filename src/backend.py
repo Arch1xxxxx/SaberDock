@@ -220,14 +220,15 @@ def preflight(device):
   data=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents'],25)
  except Exception as e:raise RuntimeError(tr('无法连接现有自定义歌曲应用。请解锁头显并保持同一 Wi-Fi；确认此头显已安装之前配置的独立应用。\n')+str(e))
  names=[f['name'] for f in data.get('result',{}).get('files',[])]
- if 'beatsaber140' not in names or 'beatsaber-1.40.apk' not in names:raise ValueError(tr('头显缺少首次运行所需的 1.40.8 程序数据。请先完成已有独立应用的初次安装。'))
+ if ENVIRONMENT.get('treeName','beatsaber') not in names or ENVIRONMENT.get('apkName','game.apk') not in names:raise ValueError(tr('头显缺少所选游戏的程序数据，请先点击安装。'))
  return device
 
 def pack_keys():
  import zipfile
- if not SOURCE.is_file():raise ValueError(tr('找不到 AVP Play 已下载的 Beat Saber 1.40.8 资源，请恢复该版本的本地下载。'))
+ if not SOURCE.is_file():raise ValueError(tr('找不到所选本地 OBB 文件，请在安装设置中重新选择。'))
  with zipfile.ZipFile(SOURCE) as z:keys=[Path(n).name.split('_pack_assets_all_')[0] for n in z.namelist() if '_pack_assets_all_' in n and '/debug_' not in n]
- return PRIORITY+[k for k in keys if k not in PRIORITY]
+ if not keys:raise ValueError(tr('所选 OBB 中没有可处理的曲包资源。头显尚未修改。'))
+ return [k for k in PRIORITY if k in keys]+[k for k in keys if k not in PRIORITY]
 
 def stream(cmd):
  p=subprocess.Popen([str(v) for v in cmd],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
@@ -278,6 +279,7 @@ def library_signature(library):
  return hashlib.sha256(json.dumps(data,ensure_ascii=False).encode()).hexdigest()
 
 def build(root,job):
+ integration.validate_source(ENVIRONMENT)
  library=scan(root)
  if library['errors']:raise ValueError(tr('请先处理以下谱面问题：\n')+'\n'.join(library['errors']))
  groups=[g for g in library['playlists'] if g['songs']]
@@ -313,13 +315,22 @@ def sign_app(name,job):
  target=job/'Klepton.app';shutil.rmtree(target,ignore_errors=True)
  run(['/usr/bin/ditto',runtime['app'],target])
  info=target/'Info.plist';d=plistlib.loads(info.read_bytes())
- d.update(CFBundleIdentifier=BUNDLE,CFBundleDisplayName=name,CFBundleName=name,CFBundleVersion=str(int(time.time())),KLApkName='beatsaber-1.40.apk',KLTree='beatsaber140',KLObbFile=obb_name(),KLStartScreen='1',KLTestBuild='0',KLAutoBootDefault='1',KLMetaApkID='',KLMetaObbID='')
+ d.update(CFBundleIdentifier=BUNDLE,CFBundleDisplayName=name,CFBundleName=name,CFBundleVersion=str(int(time.time())),KLApkName=ENVIRONMENT.get('apkName',d.get('KLApkName','game.apk')),KLTree=ENVIRONMENT.get('treeName',d.get('KLTree','beatsaber')),KLObbFile=obb_name(),KLStartScreen='1',KLTestBuild='0',KLAutoBootDefault='1',KLMetaApkID='',KLMetaObbID='')
  info.write_bytes(plistlib.dumps(d))
  profile,identity,profile_file=integration.provisioning(RES,SUPPORT,TEAM,BUNDLE,DEVICE,note)
  shutil.copy2(profile_file,target/'embedded.mobileprovision')
  entitlements=job/'signing.entitlements';entitlements.write_bytes(plistlib.dumps(profile['Entitlements']))
  run(['/usr/bin/xattr','-cr',target])
  return integration.sign_application(target,identity,entitlements,run)
+
+def game_source_id():
+ stamps=[]
+ for key in ['runtimeApp','gameTree','apk','sourceObb']:
+  value=ENVIRONMENT.get(key,'')
+  path=Path(value) if value else None
+  stat=path.stat() if path and path.exists() else None
+  stamps.append([value,stat.st_size if stat else None,stat.st_mtime_ns if stat else None])
+ return hashlib.sha256(json.dumps(stamps).encode()).hexdigest()
 
 def install(root,name,device):
  global DEVICE
@@ -349,7 +360,9 @@ def install(root,name,device):
  note(tr('正在安装你自己的独立自定义歌曲应用…'))
  run(['/usr/bin/xcrun','devicectl','device','install','app','--device',device,'--timeout','90',app],timeout=100)
  tree=Path(runtime['tree'])
- files=[(tree/'assets','Documents/beatsaber140/assets'),(tree/'apktool.yml','Documents/beatsaber140/apktool.yml'),(tree/'AndroidManifest.xml','Documents/beatsaber140/AndroidManifest.xml'),(Path(ENVIRONMENT['apk']),'Documents/beatsaber-1.40.apk')]
+ tree_name=ENVIRONMENT.get('treeName','beatsaber');apk_name=ENVIRONMENT.get('apkName','game.apk')
+ files=[(tree/'assets','Documents/'+tree_name+'/assets'),(tree/'AndroidManifest.xml','Documents/'+tree_name+'/AndroidManifest.xml'),(Path(ENVIRONMENT['apk']),'Documents/'+apk_name)]
+ if (tree/'apktool.yml').is_file():files.append((tree/'apktool.yml','Documents/'+tree_name+'/apktool.yml'))
  for source,destination in files:
   if not source.exists():raise ValueError(tr('缺少首次安装文件：')+str(source))
   note(tr('正在传输首次运行文件：')+source.name)
@@ -358,7 +371,7 @@ def install(root,name,device):
  listing=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents/android-files/obb'])
  remote=next(f for f in listing['result']['files'] if f['name']==obb_name())
  if remote['metadata']['size']!=report['resourceBytes']:raise RuntimeError(tr('头显曲库资源大小不匹配，请点击安装重试'))
- atomic(SUPPORT/'latest-success.json',{'resource':str(job/obb_name()),'bundle':BUNDLE,'name':name,'device':device,'signature':library_signature(scan(root)),'sha256':report['resourceSha256'],'resourceBytes':report['resourceBytes']})
+ atomic(SUPPORT/'latest-success.json',{'resource':str(job/obb_name()),'sourceIdentity':game_source_id(),'bundle':BUNDLE,'name':name,'device':device,'signature':library_signature(scan(root)),'sha256':report['resourceSha256'],'resourceBytes':report['resourceBytes']})
  same=True
  if backup:
   run(['/usr/bin/xcrun','devicectl','device','copy','from','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source','Documents/android-files/files/PlayerData.dat','--destination',backup/'PlayerData-after.dat','--timeout','45'],timeout=55)
@@ -368,6 +381,10 @@ def install(root,name,device):
 def update(root,name,device,rename_only=False):
  global DEVICE
  if not name.strip() or len(name.strip())>60:raise ValueError(tr('应用名称请使用 1–60 个字符'))
+ previous_source=read_json(SUPPORT/'latest-success.json',{})
+ if previous_source.get('sourceIdentity')!=game_source_id():
+  note(tr('本地游戏文件已更改，正在同步所选程序与曲库…'))
+  return install(root,name,device)
  note(tr('正在连接 Vision Pro，请保持头显解锁…'));device=preflight(device);DEVICE=device
  signature=None
  if not rename_only:
@@ -414,7 +431,7 @@ def update(root,name,device,rename_only=False):
  except Exception:launch_ok=False
  result={'name':name,'device':device,'job':str(job),'backup':str(backup),'scoresUnchanged':same,'launchSucceeded':launch_ok,'report':report}
  atomic(job/'deployment.json',result)
- if not rename_only:atomic(SUPPORT/'latest-success.json',{'resource':str(job/obb_name()),'bundle':BUNDLE,'name':name,'sha256':report['resourceSha256'],'signature':signature,'device':device,'resourceBytes':report['resourceBytes']})
+ if not rename_only:atomic(SUPPORT/'latest-success.json',{'resource':str(job/obb_name()),'sourceIdentity':game_source_id(),'bundle':BUNDLE,'name':name,'sha256':report['resourceSha256'],'signature':signature,'device':device,'resourceBytes':report['resourceBytes']})
  else:
   previous=read_json(SUPPORT/'latest-success.json',{})
   if previous and previous.get('device')==device and previous.get('bundle')==BUNDLE:previous['name']=name;atomic(SUPPORT/'latest-success.json',previous)
@@ -425,11 +442,11 @@ def update(root,name,device,rename_only=False):
 def configure(arguments):
  global ENVIRONMENT,TEAM,BUNDLE,SOURCE
  settings=read_json(SUPPORT/'settings.json',{})
- for key,attr in [('avpRoot','avp_root'),('avpApp','avp_app'),('store','store'),('team','team')]:
+ for key,attr in [('avpRoot','avp_root'),('avpApp','avp_app'),('store','store'),('team','team'),('runtimeApp','runtime_app'),('apk','apk'),('sourceObb','obb'),('gameTree','game_tree')]:
   value=getattr(arguments,attr,None)
   if value is not None:settings[key]=value
  if arguments.action=='configure':atomic(SUPPORT/'settings.json',settings)
- ENVIRONMENT=integration.discover(settings.get('avpRoot') or None,settings.get('avpApp') or None,settings.get('store') or None)
+ ENVIRONMENT=integration.discover(settings.get('avpRoot') or None,settings.get('avpApp') or None,settings.get('store') or None,runtime_app=settings.get('runtimeApp') or None,apk=settings.get('apk') or None,obb=settings.get('sourceObb') or None,tree=settings.get('gameTree') or None)
  TEAM=settings.get('team') or ENVIRONMENT.get('team','')
  BUNDLE='io.saberdock.'+TEAM.lower()+'.beatsaber140' if TEAM else 'io.saberdock.beatsaber140'
  SOURCE=Path(ENVIRONMENT['sourceObb'])
@@ -437,7 +454,7 @@ def configure(arguments):
  return ENVIRONMENT
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('action',choices=['environment','configure','prepare','install','order','delete','restore','init','scan','import','create','devices','build','update','rename','preflight']);p.add_argument('--root',default=str(Path.home()/'Music/SaberDock Library'));p.add_argument('--category',default='');p.add_argument('--name',default='SaberDock Custom Songs');p.add_argument('--device',default='');p.add_argument('--job');p.add_argument('--avp-root');p.add_argument('--avp-app');p.add_argument('--store');p.add_argument('--team');p.add_argument('paths',nargs='*');a=p.parse_intermixed_args();SUPPORT.mkdir(parents=True,exist_ok=True)
+ p=argparse.ArgumentParser();p.add_argument('action',choices=['environment','configure','prepare','install','order','delete','restore','init','scan','import','create','devices','build','update','rename','preflight']);p.add_argument('--root',default=str(Path.home()/'Music/SaberDock Library'));p.add_argument('--category',default='');p.add_argument('--name',default='SaberDock Custom Songs');p.add_argument('--device',default='');p.add_argument('--job');p.add_argument('--avp-root');p.add_argument('--avp-app');p.add_argument('--store');p.add_argument('--team');p.add_argument('--runtime-app');p.add_argument('--apk');p.add_argument('--obb');p.add_argument('--game-tree');p.add_argument('paths',nargs='*');a=p.parse_intermixed_args();SUPPORT.mkdir(parents=True,exist_ok=True)
  lock=(SUPPORT/'job.lock').open('w')
  try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
  except BlockingIOError:raise ValueError(tr('另一个曲库操作正在进行，请稍后重试'))

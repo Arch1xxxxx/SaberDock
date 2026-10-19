@@ -1,4 +1,4 @@
-import hashlib,json,os,plistlib,shutil,sys,tempfile,unittest,zipfile
+import argparse,hashlib,json,os,plistlib,shutil,sys,tempfile,unittest,zipfile
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
@@ -14,24 +14,24 @@ class DiscoveryTests(unittest.TestCase):
  def add_download(self,code):
   folder=self.store/f'beatsaber140-{code}';folder.mkdir();(folder/'beat-saber.apk').write_bytes(b'fixture');(folder/f'main.{code}.com.beatgames.beatsaber.obb').write_bytes(b'fixture')
  def add_build(self,name,code):
-  tree=self.chain/'beatsaber140';tree.mkdir(exist_ok=True);(tree/'apktool.yml').write_text(f"versionInfo:\n  versionName: '{name}'\n  versionCode: '{code}'\n")
+  tree=self.chain/'beatsaber140';tree.mkdir(exist_ok=True);(tree/'assets').mkdir(exist_ok=True);(tree/'AndroidManifest.xml').write_text('<manifest/>');(tree/'apktool.yml').write_text(f"versionInfo:\n  versionName: '{name}'\n  versionCode: '{code}'\n")
   app=self.chain/'visionos/build/dd-device-beatsaber140/Build/Products/Debug-xros/Klepton.app';app.mkdir(parents=True,exist_ok=True)
   (app/'Info.plist').write_bytes(plistlib.dumps({'KLObbFile':f'main.{code}.com.beatgames.beatsaber.obb','KLTree':'beatsaber140','CFBundleExecutable':'Klepton'}));(app/'Klepton').write_bytes(b'fixture executable')
   return app
  def test_external_store_and_newer_game_not_mixed(self):
   self.add_download(3237);self.add_build('1.45.3_30054',3237)
-  env=self.discover();self.assertFalse(env['ready']);self.assertEqual(env['store'],str(self.store.resolve()));self.assertIn('1.40.8','\n'.join(env['issues']))
- def test_1408_accepts_different_codes_and_build_suffixes(self):
-  for name,code in [('1.40.8',1716),('1.40.8_99999',2789),('1.40.8+build123',4321)]:
+  env=self.discover();self.assertTrue(env['ready'],env['issues']);self.assertEqual(env['store'],str(self.store.resolve()));self.assertEqual(env['version'],'1.45.3_30054')
+ def test_accepts_different_versions_codes_and_build_suffixes(self):
+  for name,code in [('1.40.8',1716),('1.40.8_99999',2789),('1.45.3_30054',4321),('9.99.0',9999)]:
    with self.subTest(name=name,code=code):
     self.add_download(code);self.add_build(name,code);env=self.discover()
-    self.assertTrue(env['ready'],env['issues']);self.assertEqual(env['version'],'1.40.8')
+    self.assertTrue(env['ready'],env['issues']);self.assertEqual(env['version'],name)
     self.assertEqual(env['versionCode'],code);self.assertEqual(env['obbName'],f'main.{code}.com.beatgames.beatsaber.obb')
     self.assertEqual(Path(env['apk']).parent.name,f'beatsaber140-{code}')
- def test_version_name_required_even_if_code_is_1716(self):
+ def test_any_version_name_or_missing_version_is_accepted(self):
   self.add_download(1716)
   for name in ['1.45.3_30054','1.40.80','1.40.8.1','']:
-   self.add_build(name,1716);self.assertFalse(self.discover()['ready'])
+   self.add_build(name,1716);self.assertTrue(self.discover()['ready'])
  def test_missing_executable_or_matching_download_is_not_ready(self):
   self.add_download(1716);app=self.add_build('1.40.8_12345',2789)
   self.assertFalse(self.discover()['ready'])
@@ -106,7 +106,7 @@ class SigningTests(unittest.TestCase):
 class RuntimeReuseTests(unittest.TestCase):
  def setUp(self):
   self.temp=tempfile.TemporaryDirectory();self.base=Path(self.temp.name)
-  self.tree=self.base/'AVPPlay/beatsaber140';self.tree.mkdir(parents=True);(self.tree/'apktool.yml').write_text('versionCode: 2789\nversionName: 1.40.8_12345\n')
+  self.tree=self.base/'AVPPlay/beatsaber140';self.tree.mkdir(parents=True);(self.tree/'apktool.yml').write_text('versionCode: 2789\nversionName: 1.40.8_12345\n');(self.tree/'assets').mkdir();(self.tree/'AndroidManifest.xml').write_text('<manifest/>')
   self.app=self.base/'AVPPlay/Klepton.app';self.app.mkdir()
   (self.app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable':'Klepton','KLObbFile':'main.2789.com.beatgames.beatsaber.obb','KLTree':'beatsaber140'}))
   (self.app/'Klepton').write_bytes(b'fixture translated executable')
@@ -120,10 +120,7 @@ class RuntimeReuseTests(unittest.TestCase):
  def tearDown(self):self.temp.cleanup()
  def command(self,args,**kwargs):
   args=[str(a) for a in args];self.calls.append(args)
-  if 'unpack' in args:
-   recipe=i.read(Path(args[args.index('--recipes')+1])/'beatsaber140.json');self.assertEqual(recipe['versionName'],'1.40.8_12345');self.assertEqual(recipe['versionCode'],2789)
-   tree=Path(args[args.index('--to')+1]);tree.mkdir();(tree/'apktool.yml').write_text('versionCode: 2789\nversionName: 1.40.8_12345\n')
-  elif args[0]=='/usr/bin/ditto':shutil.copytree(args[1],args[2])
+  if args[0]=='/usr/bin/ditto':shutil.copytree(args[1],args[2])
   else:raise AssertionError('Unexpected external operation: '+repr(args))
  def prepare(self):
   return i.prepare(self.env,self.support,self.base/'resources','ABCDE12345','io.fixture',lambda message:None)
@@ -131,13 +128,13 @@ class RuntimeReuseTests(unittest.TestCase):
   with patch.object(i,'command',side_effect=self.command):
    result=self.prepare()
    self.assertEqual((Path(result['app'])/'Klepton').read_bytes(),(self.app/'Klepton').read_bytes())
-   self.assertEqual(len(self.calls),2);self.assertEqual(self.calls[-1][0],'/usr/bin/ditto')
-   self.assertEqual(self.prepare(),result);self.assertEqual(len(self.calls),2)
+   self.assertEqual(len(self.calls),1);self.assertEqual(self.calls[-1][0],'/usr/bin/ditto')
+   self.assertEqual(self.prepare(),result);self.assertEqual(len(self.calls),1)
  def test_missing_match_stops_before_commands_even_with_legacy_cache(self):
   legacy_id=hashlib.sha256((str(self.apk)+hashlib.sha256(self.apk.read_bytes()).hexdigest()+str(self.env['toolchains'])+'io.fixture').encode()).hexdigest()[:24]
   i.save(self.support/'runtime-prepared'/legacy_id/'runtime.json',{'app':str(self.app),'tree':str(self.tree),'versionCode':1716})
   self.env['matched']=None
-  for language,phrase in [('en','complete its installation in AVP Play'),('zh-Hans','在 AVP Play 下载该版本并完成安装')]:
+  for language,phrase in [('en','Select the game visionOS app'),('zh-Hans','请选择 AVP Play 已生成')]:
    with patch.dict(os.environ,{'SABERDOCK_LANGUAGE':language}),patch.object(i,'command') as command:
     with self.assertRaisesRegex(ValueError,phrase):self.prepare()
     command.assert_not_called()
@@ -153,18 +150,15 @@ class RuntimeReuseTests(unittest.TestCase):
    (Path(result['app'])/'Klepton').write_bytes(b'old fallback executable')
    self.calls.clear();result=self.prepare()
    self.assertEqual((Path(result['app'])/'Klepton').read_bytes(),(self.app/'Klepton').read_bytes())
-   self.assertEqual(len(self.calls),2)
+   self.assertEqual(len(self.calls),1)
 
 
- def test_mismatched_decoded_game_stops_before_app_copy(self):
-  def command(args,**kw):
-   self.command(args,**kw)
-   args=[str(x) for x in args]
-   if 'unpack' in args:
-    (Path(args[args.index('--to')+1])/'apktool.yml').write_text('versionName: 1.45.3_30054\nversionCode: 3237\n')
-  with patch.object(i,'command',side_effect=command):
-   with self.assertRaisesRegex(ValueError,'does not match'):self.prepare()
-  self.assertEqual(len(self.calls),1)
+ def test_missing_or_newer_version_metadata_does_not_block_reuse(self):
+  with patch.object(i,'command',side_effect=self.command):
+   (self.tree/'apktool.yml').write_text('versionName: 1.45.3_30054\nversionCode: 3237\n')
+   self.assertEqual(self.prepare()['versionName'],'1.45.3_30054')
+   (self.tree/'apktool.yml').unlink()
+   self.assertTrue(self.prepare()['app'])
 
 class DeploymentFileNamesTests(unittest.TestCase):
  def test_resource_copy_uses_discovered_obb_name(self):
@@ -182,3 +176,41 @@ class DeploymentFileNamesTests(unittest.TestCase):
     result=b.sign_app('SaberDock',job)
    self.assertEqual(plistlib.loads((result/'Info.plist').read_bytes())['KLObbFile'],'main.4321.com.beatgames.beatsaber.obb')
 
+
+
+class ManualSelectionTests(unittest.TestCase):
+ setUp=RuntimeReuseTests.setUp
+ tearDown=RuntimeReuseTests.tearDown
+ def selected(self):
+  return i.discover(self.base/'missing-data',store=self.base/'missing-store',
+                    runtime_app=self.app,apk=self.apk,obb=self.obb,tree=self.tree)
+ def test_files_outside_avp_play_are_accepted_without_metadata(self):
+  (self.tree/'apktool.yml').unlink()
+  env=self.selected()
+  self.assertTrue(env['ready'],env['issues']);self.assertEqual(env['sourceObb'],str(self.obb))
+  self.assertEqual(env['obbName'],'game.obb');self.assertEqual(env['version'],'')
+  i.validate_source(env)
+ def test_manual_selection_overrides_discovery_and_survives_configure(self):
+  args=argparse.Namespace(action='configure',avp_root=str(self.base/'missing-data'),avp_app=None,store=str(self.base/'missing-store'),team='ABCDE12345',runtime_app=str(self.app),apk=str(self.apk),obb=str(self.obb),game_tree=str(self.tree))
+  with patch.multiple(b,SUPPORT=self.support,ENVIRONMENT={},TEAM='',BUNDLE='',SOURCE=Path('/nonexistent')):
+   env=b.configure(args);self.assertTrue(env['ready'],env['issues'])
+   saved=i.read(self.support/'settings.json')
+   self.assertEqual(saved['runtimeApp'],str(self.app));self.assertEqual(saved['sourceObb'],str(self.obb))
+   for key in ['avp_root','avp_app','store','team','runtime_app','apk','obb','game_tree']:setattr(args,key,None)
+   args.action='environment';again=b.configure(args)
+   self.assertTrue(again['ready']);self.assertEqual(again['apk'],str(self.apk))
+ def test_invalid_explicit_app_never_silently_uses_another_build(self):
+  env=i.discover(self.base,runtime_app=self.base/'not-an-app',apk=self.apk,obb=self.obb,tree=self.tree)
+  self.assertFalse(env['ready']);self.assertIn('Select the game visionOS app','\n'.join(env['issues']))
+ def test_resource_format_error_does_not_install_anything(self):
+  env=self.selected()
+  with zipfile.ZipFile(self.obb,'w') as z:z.writestr('unrelated',b'fixture')
+  with patch.multiple(b,SUPPORT=self.support,ENVIRONMENT=env,TEAM='ABCDE12345',SOURCE=self.obb),patch.object(b,'run') as run,patch.object(b,'devicectl') as dc:
+   with self.assertRaisesRegex(ValueError,'resource structure'):b.install(self.base,'SaberDock','fixture-device')
+   run.assert_not_called();dc.assert_not_called()
+
+class SourceChangeTests(unittest.TestCase):
+ def test_changed_file_selection_uses_complete_install(self):
+  with tempfile.TemporaryDirectory() as folder,patch.multiple(b,SUPPORT=Path(folder),ENVIRONMENT={}),patch.object(b,'install',return_value={'installed':True}) as install,patch.object(b,'preflight') as preflight:
+   self.assertTrue(b.update(folder,'SaberDock','fixture-device')['installed'])
+   install.assert_called_once_with(folder,'SaberDock','fixture-device');preflight.assert_not_called()

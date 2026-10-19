@@ -24,7 +24,7 @@ struct Playlist: Decodable, Identifiable {
     var id: String { path }
 }
 struct Library: Decodable { var root: String; var playlists: [Playlist]; var songCount: Int; var uniqueSongs: Int; var errors: [String]; var canRestore: Bool }
-struct AVPEnvironment: Decodable { var ready: Bool; var version: String; var avpRoot: String; var avpApp: String; var store: String; var team: String; var bundle: String; var issues: [String] }
+struct AVPEnvironment: Decodable { var ready: Bool; var version: String; var avpRoot: String; var avpApp: String; var store: String; var team: String; var bundle: String; var runtimeApp: String; var gameTree: String; var apk: String; var sourceObb: String; var issues: [String] }
 struct Headset: Decodable, Identifiable { var id: String; var name: String; var state: String; var model: String }
 
 final class LibraryModel: ObservableObject {
@@ -49,6 +49,10 @@ final class LibraryModel: ObservableObject {
     @Published var avpRoot = ""
     @Published var avpApp = ""
     @Published var store = ""
+    @Published var runtimeApp = ""
+    @Published var gameTree = ""
+    @Published var apk = ""
+    @Published var obb = ""
     @Published var library: Library?
     @Published var selected: String?
     @Published var root = ProcessInfo.processInfo.environment["SABER_LIBRARY_ROOT"] ?? UserDefaults.standard.string(forKey: "libraryRoot") ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Music/SaberDock Library").path
@@ -113,19 +117,39 @@ final class LibraryModel: ObservableObject {
     }
     func acceptEnvironment(_ value: Any) {
         guard let data = try? JSONSerialization.data(withJSONObject: value), let env = try? JSONDecoder().decode(AVPEnvironment.self, from: data) else { return }
-        environment = env; team = env.team; avpRoot = env.avpRoot; avpApp = env.avpApp; store = env.store
+        environment = env; team = env.team; avpRoot = env.avpRoot; avpApp = env.avpApp; store = env.store; runtimeApp = env.runtimeApp; gameTree = env.gameTree; apk = env.apk; obb = env.sourceObb
     }
     func saveEnvironment() {
-        invoke(["configure", "--avp-root", avpRoot, "--avp-app", avpApp, "--store", store, "--team", team.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()]) { [weak self] value in
+        invoke(["configure", "--avp-root", avpRoot, "--avp-app", avpApp, "--store", store, "--runtime-app", runtimeApp, "--apk", apk, "--obb", obb, "--game-tree", gameTree, "--team", team.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()]) { [weak self] value in
             self?.acceptEnvironment(value)
             if self?.environment?.ready == true { self?.setupOpen = false }
         }
     }
     func selectEnvironmentPath(_ kind: String) {
-        let panel = NSOpenPanel(); panel.canChooseFiles = kind == "app"; panel.canChooseDirectories = kind != "app"
-        panel.message = kind == "app" ? L("Select AVP Play.app", "选择 AVP Play.app") : (kind == "store" ? L("Select the AVP Play downloads folder (containing the Beat Saber 1.40.8 download)", "选择 AVP Play 下载目录（含 Beat Saber 1.40.8 下载）") : L("Select the AVPPlay data folder (containing toolchains and jobs)", "选择 AVPPlay 数据目录（含 toolchains 与 jobs）"))
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = ["app", "runtime", "apk", "obb"].contains(kind)
+        panel.canChooseDirectories = !panel.canChooseFiles
+        panel.allowsMultipleSelection = false
+        switch kind {
+        case "runtime": panel.message = L("Select the game .app already built by AVP Play for Vision Pro", "选择 AVP Play 已为 Vision Pro 生成的游戏 .app")
+        case "apk": panel.message = L("Select your local Beat Saber APK", "选择本地 Beat Saber APK")
+        case "obb": panel.message = L("Select your local Beat Saber OBB", "选择本地 Beat Saber OBB")
+        case "tree": panel.message = L("Select the game data folder containing assets and AndroidManifest.xml", "选择含 assets 和 AndroidManifest.xml 的游戏数据文件夹")
+        case "app": panel.message = L("Select AVP Play.app on your Mac", "选择 Mac 上的 AVP Play.app")
+        case "store": panel.message = L("Select your local game downloads folder", "选择本地游戏下载目录")
+        default: panel.message = L("Select the AVPPlay data folder", "选择 AVPPlay 数据目录")
+        }
+        if kind == "runtime" || kind == "app" { panel.allowedContentTypes = [.application] }
         if panel.runModal() == .OK, let url = panel.url {
-            if kind == "app" { avpApp = url.path } else if kind == "store" { store = url.path } else { avpRoot = url.path }
+            switch kind {
+            case "runtime": runtimeApp = url.path
+            case "apk": apk = url.path
+            case "obb": obb = url.path
+            case "tree": gameTree = url.path
+            case "app": avpApp = url.path
+            case "store": store = url.path
+            default: avpRoot = url.path
+            }
         }
     }
     func firstInstall() {
@@ -364,7 +388,7 @@ struct ContentView: View {
                     }
                 }.padding(18).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 12)).padding(.horizontal, 24).disabled(model.unavailable)
                 HStack {
-                    Label(model.environment?.ready == true ? L("AVP Play · 1.40.8 files ready", "AVP Play · 1.40.8 文件已就绪") : L("Check your AVP Play installation settings", "请先检查 AVP Play 安装设置"), systemImage: model.environment?.ready == true ? "checkmark.circle" : "exclamationmark.circle").font(.caption).foregroundStyle(model.environment?.ready == true ? Color.secondary : Color.orange)
+                    Label(model.environment?.ready == true ? L("Local game files selected", "本地游戏文件已选择") : L("Check your AVP Play installation settings", "请先检查 AVP Play 安装设置"), systemImage: model.environment?.ready == true ? "checkmark.circle" : "exclamationmark.circle").font(.caption).foregroundStyle(model.environment?.ready == true ? Color.secondary : Color.orange)
                     Spacer(); Button(L("Installation Settings…", "安装设置…")) { model.setupOpen = true }.buttonStyle(.link).disabled(model.unavailable)
                 }.padding(.horizontal, 24).padding(.top, 12)
                 if let errors = model.library?.errors, !errors.isEmpty {
@@ -408,7 +432,7 @@ struct ContentView: View {
                         if model.busy || model.scanning { ProgressView().controlSize(.small) }
                         VStack(alignment: .leading, spacing: 3) { Text(model.busy ? model.status : (model.scanning ? L("Scanning library…", "正在扫描曲库…") : L("Ready · Last update: \(model.lastUpdate.isEmpty ? L("Never", "尚未更新") : model.lastUpdate)", "就绪 · 上次更新 \(model.lastUpdate.isEmpty ? L("Never", "尚未更新") : model.lastUpdate)"))).font(.subheadline); Text(L("Only new or changed songs are processed · Order and deletions apply at the next sync", "只处理新增或修改曲目 · 排序与删除将在下次同步生效")).font(.caption).foregroundStyle(.secondary) }
                         Spacer()
-                        Button(L("Install", "安装")) { model.firstInstall() }.disabled(model.unavailable || !(model.environment?.ready ?? false) || model.team.count != 10 || !(model.library?.errors.isEmpty ?? true))
+                        Button(L("Install", "安装")) { model.firstInstall() }.disabled(model.unavailable)
                         Button(L("Build Library Only", "仅生成曲库")) { model.buildOnly() }.disabled(model.unavailable)
                         Button { model.update() } label: { Label(model.busy ? L("Processing…", "正在处理…") : L("Update Headset", "一键更新头显"), systemImage: "arrow.up.doc.fill").padding(.vertical, 5) }.buttonStyle(.borderedProminent).disabled(model.unavailable || !(model.library?.errors.isEmpty ?? true) || model.appName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
@@ -430,16 +454,24 @@ struct ContentView: View {
         }
         .sheet(isPresented: $model.setupOpen) {
             VStack(alignment: .leading, spacing: 16) {
-                Text(L("Connect Your AVP Play", "连接你的 AVP Play")).font(.title2.bold())
-                Text(L("Use your locally downloaded Beat Saber 1.40.8 files and your own Xcode account to sign and install a separate headset app.", "复用你已下载的 Beat Saber 1.40.8，用你自己的 Xcode 账户签名并安装独立应用。")).foregroundStyle(.secondary)
+                Text(L("Choose Local Game Files", "选择本地游戏文件")).font(.title2.bold())
+                Text(L("Select an existing Vision Pro game app and your local APK, OBB, and game data folder. Game versions are not restricted. Resource compatibility is checked when building the library.", "选择已有的 Vision Pro 游戏应用、本地 APK、OBB 和游戏数据文件夹。不限制游戏版本；生成曲库时会检查实际资源结构。")).foregroundStyle(.secondary)
                 ForEach(model.environment?.issues ?? [], id: \.self) { Text($0).font(.callout).foregroundStyle(.orange).textSelection(.enabled) }
-                HStack { Text(L("AVP Play App", "AVP Play 应用")).frame(width: 110, alignment: .leading); TextField("AVP Play.app", text: $model.avpApp); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("app") } }
-                HStack { Text(L("AVP Play Data", "AVP Play 数据")).frame(width: 110, alignment: .leading); TextField(L("Folder containing toolchains and jobs", "含 toolchains 与 jobs 的目录"), text: $model.avpRoot); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("data") } }
-                HStack { Text(L("Game Downloads", "游戏下载目录")).frame(width: 110, alignment: .leading); TextField(L("Folder containing the Beat Saber 1.40.8 download", "含 Beat Saber 1.40.8 下载 的目录"), text: $model.store); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("store") } }
+                HStack { Text(L("Vision Pro App", "头显游戏应用")).frame(width: 110, alignment: .leading); TextField("Game.app", text: $model.runtimeApp); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("runtime") } }
+                HStack { Text(L("Game APK", "游戏 APK")).frame(width: 110, alignment: .leading); TextField("Game.apk", text: $model.apk); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("apk") } }
+                HStack { Text(L("Game OBB", "游戏 OBB")).frame(width: 110, alignment: .leading); TextField("Game.obb", text: $model.obb); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("obb") } }
+                HStack { Text(L("Game Data", "游戏数据")).frame(width: 110, alignment: .leading); TextField(L("Folder with assets and AndroidManifest.xml", "含 assets 和 AndroidManifest.xml 的文件夹"), text: $model.gameTree); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("tree") } }
+                DisclosureGroup(L("Automatic Discovery Locations (Optional)", "自动查找位置（可选）")) {
+                    VStack(spacing: 10) {
+                        HStack { Text(L("AVP Play App", "AVP Play 应用")).frame(width: 110, alignment: .leading); TextField("AVP Play.app", text: $model.avpApp); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("app") } }
+                        HStack { Text(L("AVP Play Data", "AVP Play 数据")).frame(width: 110, alignment: .leading); TextField(L("AVPPlay folder", "AVPPlay 文件夹"), text: $model.avpRoot); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("data") } }
+                        HStack { Text(L("Game Downloads", "游戏下载目录")).frame(width: 110, alignment: .leading); TextField(L("Downloads folder", "下载文件夹"), text: $model.store); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("store") } }
+                    }.padding(.top, 8)
+                }
                 HStack { Text(L("Apple Team ID", "Apple 团队 ID")).frame(width: 110, alignment: .leading); TextField(L("Your own 10-character team ID", "自己的 10 位团队 ID"), text: $model.team) }
                 Text(L("Your team ID can be read from recent AVP Play installations or checked in Xcode → Settings → Accounts. Requires Xcode, a visionOS SDK, Developer Mode, and a paired Vision Pro.", "团队 ID 可从 AVP Play 最近的安装记录自动读取；也可在 Xcode → Settings → Accounts 中确认。需要 Xcode、visionOS SDK、开发者模式和已配对的 Vision Pro。")).font(.caption).foregroundStyle(.secondary)
                 HStack { Button(L("Open AVP Play", "打开 AVP Play")) { if !model.avpApp.isEmpty { NSWorkspace.shared.open(URL(fileURLWithPath: model.avpApp)) } }; Spacer(); Button(L("Close", "关闭")) { model.setupOpen = false }; Button(L("Save and Check", "保存并检查")) { model.saveEnvironment() }.buttonStyle(.borderedProminent) }
-            }.padding(28).frame(width: 700).textFieldStyle(.roundedBorder).disabled(model.unavailable)
+            }.padding(28).frame(width: 760).textFieldStyle(.roundedBorder).disabled(model.unavailable)
         }
         .onAppear {
             model.start()

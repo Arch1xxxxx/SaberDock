@@ -2,8 +2,8 @@
 
 SaberDock's own source is MIT-licensed. Dependencies retain their respective licenses:
 
-- [AVP Play](https://github.com/myMartek/avp-play), MIT: called on the user's Mac to unpack the user's local APK. Its application, toolchains and content library are not redistributed.
-- [Klepton](https://github.com/shinyquagsire23/Klepton), MIT and its third-party notices: the user's AVP Play toolchain is used locally to prepare the visionOS runtime. No Klepton build or translated game code is included in SaberDock releases.
+- [AVP Play](https://github.com/myMartek/avp-play), MIT: prepares the purchased game files that users select locally in SaberDock. Its application, toolchains and content library are not redistributed.
+- [Klepton](https://github.com/shinyquagsire23/Klepton), MIT and its third-party notices: the existing Klepton-based visionOS app built by AVP Play is reused locally. No Klepton build or translated game code is included in SaberDock releases.
 - [Python](https://www.python.org/), PSF and bundled-library notices; portable distribution from [python-build-standalone](https://github.com/astral-sh/python-build-standalone). Runtime notices are preserved in the release.
 - [Node.js](https://nodejs.org/), MIT and bundled-library notices. `Contents/Resources/licenses/Node-LICENSE` preserves its full notice.
 - [UnityPy](https://github.com/K0lb3/UnityPy), MIT.

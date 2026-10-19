@@ -4,9 +4,9 @@
 
 SaberDock 是一款 Mac 曲库管理工具，用于整理 Beat Saber 自定义谱面，并将歌单同步到 Apple Vision Pro。它面向已经购买游戏、希望在自己头显上游玩自定义内容的用户。
 
-使用前，请先安装 [AVP Play](https://github.com/myMartek/avp-play)，连接拥有 Beat Saber 的 Meta 账户，并完成已购游戏在 Vision Pro 上的安装。AVP Play 的[账户与购买说明](https://github.com/myMartek/avp-play#your-accounts-and-your-data)明确：它会向 Meta 核实账户的购买记录，仅获取该账户已确认拥有的游戏文件。游戏文件来自 Meta，而非 SaberDock 或 AVP Play 的项目仓库。
+使用前，请先安装 [AVP Play](https://github.com/myMartek/avp-play)，连接拥有 Beat Saber 的 Meta 账户，并完成已购游戏在 Vision Pro 上的安装。根据 AVP Play 公开的[账户与购买说明](https://github.com/myMartek/avp-play#your-accounts-and-your-data)，它使用用户自己的账户向 Meta 核实购买记录，并仅下载该账户已确认拥有的游戏文件。其下载流程与使用条件请以 AVP Play 的文档为准。
 
-SaberDock 在现有本地安装的基础上管理谱面，并准备独立的自定义内容应用；它不登录 Meta，也不下载游戏。SaberDock 与 AVP Play 均不分发游戏副本，不提供未购买游戏或付费曲包的访问权限。
+SaberDock 在现有本地安装的基础上管理谱面，并准备独立的自定义内容应用；它不登录 Meta，也不下载游戏。SaberDock 不包含游戏内容，也不提供未购买游戏或付费曲包的访问权限。本项目独立维护，并非 AVP Play 官方项目。
 
 **安装或更新前，必须准备至少两个歌单（曲包），且每个歌单至少包含一份受支持的谱面。目前仅有一个歌单时，头显应用无法进入主菜单；空文件夹不计入歌单数量。整理或删除歌曲后，也请保留至少两个非空歌单。**
 
@@ -100,6 +100,10 @@ python3 scripts/build_app.py
 ```
 
 构建会下载固定版本并核对校验和的便携 Python、Node 和锁定依赖。生成的 Mac 应用无需另装 Python 或 Node。DMG、ZIP 和 SHA-256 校验文件位于 `dist/`；发布包检查会排除游戏内容和个人签名资料。
+
+## 问题反馈
+
+SaberDock 的安装、曲库或同步问题，请提交到 [SaberDock 的问题反馈页面](https://github.com/Arch1xxxxx/SaberDock/issues)。本集成由 SaberDock 维护，不应要求 AVP Play 或 Klepton 的维护者为其提供支持。如果问题在单独使用 AVP Play 时也能复现，请遵循其贡献与问题反馈指引。
 
 ## 创建者
 

@@ -6,6 +6,8 @@ A Mac app for organizing custom Beat Saber maps and updating a separate custom-c
 
 **SaberDock does not include or distribute any game, APK, OBB, paid music pack, or game-derived runtime. It is a companion tool for playing custom content for games you already own on devices you already own. You must provide your own game files through your own AVP Play installation.**
 
+**Before installing or updating, add at least two playlists, each containing at least one supported map. The headset app currently cannot reach the main menu with only one playlist; empty folders do not count. Keep at least two nonempty playlists when reorganizing or deleting songs.**
+
 ## What you can do
 
 - Import map ZIP files or extracted map folders by dragging them into the app.
@@ -36,8 +38,8 @@ The app is locally signed and is not notarized by Apple. If macOS blocks the fir
 ## Set up and install on your headset
 
 1. Open **Installation Settings**. Check the detected AVP Play app, data folder, downloads folder, and your Apple Team ID. You can choose paths manually. The team ID is also available in Xcode → Settings → Accounts.
-2. Add maps to your library. The default location is `~/Music/SaberDock Library`; the default headset app name is **SaberDock Custom Songs**. These defaults stay in English regardless of interface language. You can choose a different library location and app name.
-3. Keep the headset unlocked, select your Vision Pro, and click **Install / Repair**. SaberDock prepares and signs the separate app locally, then installs the app and required data on your headset.
+2. Create at least two playlist folders and add at least one supported map to each. The default location is `~/Music/SaberDock Library`; the default headset app name is **SaberDock Custom Songs**. These defaults stay in English regardless of interface language. You can choose a different library location and app name.
+3. Keep the headset unlocked, select your Vision Pro, and click **Install**. SaberDock prepares and signs the separate app locally, then installs the app and required data on your headset.
 4. Open **SaberDock Custom Songs**, or the name you chose, on the headset.
 
 SaberDock uses your local game files and your own signing account. The original AVP Play game installation remains separate. Signing validity and device access depend on your Apple development account.
@@ -109,6 +111,8 @@ The source is licensed under the [MIT License](LICENSE). See [third-party notice
 
 **SaberDock 不包含、也不分发任何游戏、APK、OBB、付费曲包或由游戏生成的运行文件。本软件只是辅助工具，让你在已有的设备上游玩已拥有游戏的自定义内容。你需要通过自己的 AVP Play 安装提供自己拥有的游戏文件。**
 
+**安装或更新前，必须准备至少两个歌单（曲包），且每个歌单至少包含一份受支持的谱面。目前仅有一个歌单时，头显应用无法进入主菜单；空文件夹不计入歌单数量。整理或删除歌曲后，也请保留至少两个非空歌单。**
+
 ## 可以做什么
 
 - 拖入谱面 ZIP 或已解压的谱面文件夹，直接导入歌曲。
@@ -139,8 +143,8 @@ The source is licensed under the [MIT License](LICENSE). See [third-party notice
 ## 设置并安装到头显
 
 1. 打开 **Installation Settings（安装设置）**，核对自动检测的 AVP Play 应用、数据目录、下载目录和你自己的 Apple 团队 ID，也可手动选择。团队 ID 还可在 Xcode → Settings → Accounts 中查看。
-2. 添加谱面。默认曲库位置为 `~/Music/SaberDock Library`，默认头显应用名称为 **SaberDock Custom Songs**。无论界面选择哪种语言，这两个默认值都使用英文。可自行选择其他曲库位置和应用名称。
-3. 保持头显解锁，选择你的 Vision Pro，点击 **Install / Repair（首次安装 / 修复）**。SaberDock 在本机准备并签名独立应用，再安装应用并传输必要数据。
+2. 创建至少两个歌单文件夹，每个文件夹放入至少一份受支持的谱面。默认曲库位置为 `~/Music/SaberDock Library`，默认头显应用名称为 **SaberDock Custom Songs**。无论界面选择哪种语言，这两个默认值都使用英文。可自行选择其他曲库位置和应用名称。
+3. 保持头显解锁，选择你的 Vision Pro，点击 **Install（安装）**。SaberDock 在本机准备并签名独立应用，再安装应用并传输必要数据。
 4. 在头显打开 **SaberDock Custom Songs**，或你自行设置的名称。
 
 SaberDock 使用你的本地游戏文件和自己的签名账户，与 AVP Play 原版游戏安装相互独立。签名有效期及设备能力取决于你的 Apple 开发账户。

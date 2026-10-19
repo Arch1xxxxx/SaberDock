@@ -408,7 +408,7 @@ struct ContentView: View {
                         if model.busy || model.scanning { ProgressView().controlSize(.small) }
                         VStack(alignment: .leading, spacing: 3) { Text(model.busy ? model.status : (model.scanning ? L("Scanning library…", "正在扫描曲库…") : L("Ready · Last update: \(model.lastUpdate.isEmpty ? L("Never", "尚未更新") : model.lastUpdate)", "就绪 · 上次更新 \(model.lastUpdate.isEmpty ? L("Never", "尚未更新") : model.lastUpdate)"))).font(.subheadline); Text(L("Only new or changed songs are processed · Order and deletions apply at the next sync", "只处理新增或修改曲目 · 排序与删除将在下次同步生效")).font(.caption).foregroundStyle(.secondary) }
                         Spacer()
-                        Button(L("Install / Repair", "首次安装 / 修复")) { model.firstInstall() }.disabled(model.unavailable || !(model.environment?.ready ?? false) || model.team.count != 10 || !(model.library?.errors.isEmpty ?? true))
+                        Button(L("Install", "安装")) { model.firstInstall() }.disabled(model.unavailable || !(model.environment?.ready ?? false) || model.team.count != 10 || !(model.library?.errors.isEmpty ?? true))
                         Button(L("Build Library Only", "仅生成曲库")) { model.buildOnly() }.disabled(model.unavailable)
                         Button { model.update() } label: { Label(model.busy ? L("Processing…", "正在处理…") : L("Update Headset", "一键更新头显"), systemImage: "arrow.up.doc.fill").padding(.vertical, 5) }.buttonStyle(.borderedProminent).disabled(model.unavailable || !(model.library?.errors.isEmpty ?? true) || model.appName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }

@@ -355,7 +355,7 @@ def install(root,name,device):
  note(tr('正在传输自定义曲库…'));send_resource(device,job/integration.OBB_NAME)
  listing=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents/android-files/obb'])
  remote=next(f for f in listing['result']['files'] if f['name']==integration.OBB_NAME)
- if remote['metadata']['size']!=report['resourceBytes']:raise RuntimeError(tr('头显曲库资源大小不匹配，请点击首次安装/修复重试'))
+ if remote['metadata']['size']!=report['resourceBytes']:raise RuntimeError(tr('头显曲库资源大小不匹配，请点击安装重试'))
  atomic(SUPPORT/'latest-success.json',{'resource':str(job/integration.OBB_NAME),'bundle':BUNDLE,'name':name,'device':device,'signature':library_signature(scan(root)),'sha256':report['resourceSha256'],'resourceBytes':report['resourceBytes']})
  same=True
  if backup:

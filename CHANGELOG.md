@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Document the requirement for at least two nonempty playlists to reach the headset main menu.
+- Rename the installation button and related messages to Install / 安装 in both interface languages.
+
 ## 0.2.1
 
 - Preserve the game pack registry when building a single custom playlist; hide unused packs and remove their original playable songs without breaking menu initialization.

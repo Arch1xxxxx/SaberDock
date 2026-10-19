@@ -17,7 +17,6 @@
   " 个曲包": " playlists",
   "应用名称请使用 1–60 个字符": "Use 1–60 characters for the app name",
   "请在安装设置中填写自己的 Apple 开发团队 ID": "Enter your own Apple development team ID in Installation Settings",
-  "头显曲库资源大小不匹配，请点击首次安装/修复重试": "Headset library size mismatch. Use Install / Repair to try again",
   "正在传输曲库，可能需要几分钟，请保持头显解锁…": "Transferring the library. This may take several minutes; keep your headset unlocked…",
   "正在重新打开应用…": "Reopening the app…",
   "谱面 ZIP 太大或文件数量过多": "The map ZIP is too large or contains too many files",
@@ -100,5 +99,6 @@
   "BPM 无效": "Invalid BPM",
   "该谱面的音频偏移或 Shuffle 暂不支持": "Audio offsets and Shuffle are not supported",
   "仅支持 Standard（标准双剑）谱面": "Only Standard two-saber maps are supported",
-  "复用已校验谱面：": "Reusing verified map: "
+  "复用已校验谱面：": "Reusing verified map: ",
+  "头显曲库资源大小不匹配，请点击安装重试": "Headset library size mismatch. Click Install to try again"
 }

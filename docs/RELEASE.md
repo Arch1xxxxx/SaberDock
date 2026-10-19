@@ -28,7 +28,7 @@ SaberDock includes and distributes no games, APKs, OBBs, paid music packs, or ga
 
 **安装或更新前，须准备至少两个非空歌单，每个至少包含一份受支持的谱面。只有一个歌单时无法进入头显游戏主菜单。**
 
-需要 macOS 14 或更新版本的 Apple Silicon Mac、带兼容 visionOS SDK 的 Xcode、已配对的 Vision Pro，以及通过 AVP Play 完成的 Beat Saber 1.40.8安装，并保留 Mac 上对应的 visionOS 应用构建。SaberDock 复用该应用，不自行转译或重新构建游戏可执行程序。
+需要 macOS 14 或更新版本的 Apple Silicon Mac、带兼容 visionOS SDK 的 Xcode、已配对的 Vision Pro，以及通过 AVP Play 准备的已购游戏文件。在安装设置中选择本地 visionOS 游戏应用、APK、OBB 和游戏数据文件夹。不限制游戏版本，转换器会在修改头显前检查所选资源结构。SaberDock 复用所选应用，不自行转译或重新构建游戏可执行程序。
 
 下载 DMG，将 SaberDock 拖入“应用程序”，再按照[使用指引](https://github.com/Arch1xxxxx/SaberDock#readme)设置。应用使用本地签名，尚未经过 Apple 公证。也提供 ZIP 和 SHA-256 校验文件。
 

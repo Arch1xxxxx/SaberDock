@@ -107,7 +107,7 @@ SaberDock 的自定义内容应用与 AVP Play 原版游戏安装相互独立。
 ~/Library/Application Support/SaberDock/
 ```
 
-SaberDock 读取 AVP Play 相关的本地下载、安装记录和工具链，不读取 Meta 登录凭据。请勿将生成的头显应用、游戏文件、签名凭据或 Application Support 文件夹上传到本仓库。
+SaberDock 读取 AVP Play 相关的本地下载、安装记录和工具链，不读取 Meta 登录凭据。请勿将生成的头显应用、游戏文件、签名凭据或 Application Support 文件夹上传或分享给任何第三方。
 
 ## 从源码构建
 
@@ -126,7 +126,7 @@ SaberDock 的安装、曲库或同步问题，请提交到 [SaberDock 的问题�
 
 ## 创建者
 
-由 [Arch1xxxxx](https://github.com/Arch1xxxxx) 与 Codex（AI 编程助手）共同创建。
+由 [Arch1xxxxx](https://github.com/Arch1xxxxx) 与 Codex 共同创建。
 
 ## 致谢
 

@@ -107,7 +107,7 @@ Processing caches, locally generated headset apps, provisioning data, and score 
 ~/Library/Application Support/SaberDock/
 ```
 
-SaberDock reads AVP Play’s relevant local downloads, installation records, and toolchain; it does not read Meta login credentials. Do not upload generated headset apps, game files, signing credentials, or your Application Support folder to this repository.
+SaberDock reads AVP Play’s relevant local downloads, installation records, and toolchain; it does not read Meta login credentials. Do not upload or share generated headset apps, game files, signing credentials, or your Application Support folder with any third party.
 
 ## Build from source
 
@@ -126,7 +126,7 @@ For problems with SaberDock installation, playlists, or syncing, open an issue i
 
 ## Creators
 
-Created by [Arch1xxxxx](https://github.com/Arch1xxxxx) and Codex (AI coding assistant).
+Created by [Arch1xxxxx](https://github.com/Arch1xxxxx) and Codex.
 
 ## Acknowledgments
 

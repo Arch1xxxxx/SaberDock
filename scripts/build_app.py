@@ -3,7 +3,7 @@
 import argparse,hashlib,json,os,plistlib,shutil,subprocess,sys,tarfile,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
-BUILD=ROOT/'.build';DIST=ROOT/'dist';VERSION='0.1.2'
+BUILD=ROOT/'.build';DIST=ROOT/'dist';VERSION='0.2.0'
 def run(args,**kw):subprocess.run([str(x) for x in args],check=True,**kw)
 def download(item):
  target=BUILD/Path(item['url']).name
@@ -34,13 +34,13 @@ def main():
   run([node,npm,'ci','--ignore-scripts','--omit=dev'],cwd=ROOT,env=env)
  shutil.copytree(BUILD/'python-libs',res/'python-libs',symlinks=True);shutil.copytree(ROOT/'node_modules',res/'node_modules',symlinks=True)
  run([python,ROOT/'scripts/dependency_inventory.py',res/'python-libs',res/'DEPENDENCIES.json'])
- for name in ['backend.py','integration.py','build.py','convert.cjs','SigningProject.pbxproj']:shutil.copy2(ROOT/'src'/name,res/name)
+ for name in ['backend.py','integration.py','build.py','convert.cjs','i18n.py','i18n.cjs','messages.json','SigningProject.pbxproj']:shutil.copy2(ROOT/'src'/name,res/name)
  shutil.copy2(ROOT/'LICENSE',res/'LICENSE');shutil.copy2(ROOT/'THIRD-PARTY.md',res/'THIRD-PARTY.md')
  notices=res/'licenses';notices.mkdir(exist_ok=True)
  for name in ['LICENSE','LICENSE.txt','LICENSE.rst','COPYING','COPYING.txt']:
   file=BUILD/'node'/name
   if file.exists():shutil.copy2(file,notices/('Node-'+name))
- info={'CFBundleIdentifier':'io.saberdock.mac','CFBundleName':'SaberDock','CFBundleDisplayName':'SaberDock 曲库','CFBundleExecutable':'SaberDock','CFBundlePackageType':'APPL','CFBundleShortVersionString':VERSION,'CFBundleVersion':'1','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'CFBundleIconFile':'AppIcon'}
+ info={'CFBundleIdentifier':'io.saberdock.mac','CFBundleName':'SaberDock','CFBundleDisplayName':'SaberDock','CFBundleExecutable':'SaberDock','CFBundlePackageType':'APPL','CFBundleShortVersionString':VERSION,'CFBundleVersion':'2','CFBundleDevelopmentRegion':'en','CFBundleLocalizations':['en','zh-Hans'],'LSApplicationCategoryType':'public.app-category.music','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'CFBundleIconFile':'AppIcon'}
  (app/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
  run(['/usr/bin/xcrun','swiftc','-swift-version','5','-parse-as-library','-O','-target','arm64-apple-macosx14.0','-module-cache-path',BUILD/'swift-cache','src/App.swift','-o',mac/'SaberDock'],cwd=ROOT)
  run(['/usr/bin/xcrun','swift',ROOT/'scripts/icon.swift',res/'AppIcon.icns'])

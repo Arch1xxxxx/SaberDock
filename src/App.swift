@@ -2,6 +2,10 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
+func L(_ english: String, _ chinese: String) -> String {
+    (ProcessInfo.processInfo.environment["SABERDOCK_LANGUAGE"] ?? UserDefaults.standard.string(forKey: "interfaceLanguage")) == "zh-Hans" ? chinese : english
+}
+
 struct Song: Decodable, Identifiable {
     var id: String
     var title: String
@@ -24,6 +28,21 @@ struct AVPEnvironment: Decodable { var ready: Bool; var version: String; var avp
 struct Headset: Decodable, Identifiable { var id: String; var name: String; var state: String; var model: String }
 
 final class LibraryModel: ObservableObject {
+    @Published var language = ProcessInfo.processInfo.environment["SABERDOCK_LANGUAGE"] ?? UserDefaults.standard.string(forKey: "interfaceLanguage") ?? "en" {
+        didSet {
+            UserDefaults.standard.set(language, forKey: "interfaceLanguage")
+            if !unavailable {
+                status = L("Ready", "就绪")
+                logs = []
+                notice = nil
+                error = nil
+                invoke(["scan", "--root", root]) { [weak self] value in
+                    self?.acceptLibrary(value)
+                    self?.inspectEnvironment()
+                }
+            }
+        }
+    }
     @Published var environment: AVPEnvironment?
     @Published var setupOpen = false
     @Published var team = ""
@@ -32,19 +51,19 @@ final class LibraryModel: ObservableObject {
     @Published var store = ""
     @Published var library: Library?
     @Published var selected: String?
-    @Published var root = ProcessInfo.processInfo.environment["SABER_LIBRARY_ROOT"] ?? UserDefaults.standard.string(forKey: "libraryRoot") ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Music/Beat Saber 曲库").path
-    @Published var appName = UserDefaults.standard.string(forKey: "headsetAppName") ?? "SaberDock 自定义歌曲"
+    @Published var root = ProcessInfo.processInfo.environment["SABER_LIBRARY_ROOT"] ?? UserDefaults.standard.string(forKey: "libraryRoot") ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Music/SaberDock Library").path
+    @Published var appName = (UserDefaults.standard.string(forKey: "headsetAppName").map { $0 == "SaberDock 自定义歌曲" ? "SaberDock Custom Songs" : $0 }) ?? "SaberDock Custom Songs"
     @Published var deviceID = UserDefaults.standard.string(forKey: "headsetID") ?? ""
     @Published var headsets: [Headset] = []
     @Published var busy = false
     @Published var scanning = false
     @Published var editingName = false
     @Published var discovering = false
-    @Published var status = "正在准备曲库…"
+    @Published var status = L("Preparing library…", "正在准备曲库…")
     @Published var logs: [String] = []
     @Published var error: String?
     @Published var notice: String?
-    @Published var lastUpdate = UserDefaults.standard.string(forKey: "lastUpdate") ?? "尚未更新"
+    @Published var lastUpdate = UserDefaults.standard.string(forKey: "lastUpdate") ?? ""
     var timer: Timer?
     var current: Playlist? { library?.playlists.first(where: { $0.path == selected }) }
     var unavailable: Bool { busy || scanning || discovering }
@@ -103,7 +122,7 @@ final class LibraryModel: ObservableObject {
     }
     func selectEnvironmentPath(_ kind: String) {
         let panel = NSOpenPanel(); panel.canChooseFiles = kind == "app"; panel.canChooseDirectories = kind != "app"
-        panel.message = kind == "app" ? "选择 AVP Play.app" : (kind == "store" ? "选择 AVP Play 下载目录（含 beatsaber140-1716）" : "选择 AVPPlay 数据目录（含 toolchains 与 jobs）")
+        panel.message = kind == "app" ? L("Select AVP Play.app", "选择 AVP Play.app") : (kind == "store" ? L("Select the AVP Play downloads folder (containing beatsaber140-1716)", "选择 AVP Play 下载目录（含 beatsaber140-1716）") : L("Select the AVPPlay data folder (containing toolchains and jobs)", "选择 AVPPlay 数据目录（含 toolchains 与 jobs）"))
         if panel.runModal() == .OK, let url = panel.url {
             if kind == "app" { avpApp = url.path } else if kind == "store" { store = url.path } else { avpRoot = url.path }
         }
@@ -112,12 +131,12 @@ final class LibraryModel: ObservableObject {
         persist()
         invoke(["install", "--root", root, "--name", appName, "--device", deviceID]) { [weak self] value in
             let changed = (value as? [String: Any])?["scoresUnchanged"] as? Bool == false
-            self?.notice = (changed ? "安装前后的成绩均已备份。" : "") + "独立自定义歌曲应用已安装。请在头显打开「\(self?.appName ?? "SaberDock")」。之后新增歌曲请使用「一键更新头显」。"
+            self?.notice = (changed ? L("Scores before and after installation have been backed up. ", "安装前后的成绩均已备份。") : "") + L("The custom songs app is installed. Open “\(self?.appName ?? "SaberDock")” on your headset. Use “Update Headset” for future library changes.", "独立自定义歌曲应用已安装。请在头显打开「\(self?.appName ?? "SaberDock")」。之后新增歌曲请使用「一键更新头显」。")
         }
     }
     func chooseRoot() {
         let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
-        panel.message = "每个子文件夹将成为头显中的一个曲包。"; panel.prompt = "使用此曲库"
+        panel.message = L("Each subfolder becomes a playlist on your headset.", "每个子文件夹将成为头显中的一个曲包。"); panel.prompt = L("Use This Library", "使用此曲库")
         if panel.runModal() == .OK, let url = panel.url {
             root = url.path; persist(); invoke(["init", "--root", root]) { [weak self] value in self?.acceptLibrary(value) }
         }
@@ -153,7 +172,7 @@ final class LibraryModel: ObservableObject {
     }
     func deleteSong(_ song: Song, category: String) {
         guard !unavailable else { return }
-        invoke(["delete", "--root", root, "--category", category, song.id]) { [weak self] value in self?.acceptLibrary(value); self?.status = "已删除「\(song.title)」，下次同步将从头显移除" }
+        invoke(["delete", "--root", root, "--category", category, song.id]) { [weak self] value in self?.acceptLibrary(value); self?.status = L("Removed “\(song.title)”. It will be removed from the headset at the next sync.", "已删除「\(song.title)」，下次同步将从头显移除") }
     }
     func restoreSong() {
         guard !unavailable else { return }
@@ -163,12 +182,12 @@ final class LibraryModel: ObservableObject {
         let source = URL(fileURLWithPath: song.sourcePath)
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: source.path, isDirectory: &isDirectory) else {
-            error = "「\(song.title)」的源谱面已移动或删除，请刷新曲库后重试。\n\(source.path)"
+            error = L("The source for “\(song.title)” was moved or deleted. Refresh your library and try again.\n\(source.path)", "「\(song.title)」的源谱面已移动或删除，请刷新曲库后重试。\n\(source.path)")
             return
         }
         let folder = isDirectory.boolValue ? source : source.deletingLastPathComponent()
         guard NSWorkspace.shared.open(folder) else {
-            error = "无法在访达中打开「\(song.title)」的源文件夹。\n\(folder.path)"
+            error = L("Could not open the source folder for “\(song.title)” in Finder.\n\(folder.path)", "无法在访达中打开「\(song.title)」的源文件夹。\n\(folder.path)")
             return
         }
         if !isDirectory.boolValue { NSWorkspace.shared.activateFileViewerSelecting([source]) }
@@ -176,7 +195,7 @@ final class LibraryModel: ObservableObject {
     func openLibrary() { NSWorkspace.shared.open(URL(fileURLWithPath: current?.path ?? root)) }
     func importDialog() {
         let panel = NSOpenPanel(); panel.canChooseFiles = true; panel.canChooseDirectories = true; panel.allowsMultipleSelection = true
-        panel.allowedContentTypes = [.zip, .folder]; panel.message = "导入 ZIP、已解压谱面，或一个包含多首歌曲的分类文件夹。"; panel.prompt = "导入"
+        panel.allowedContentTypes = [.zip, .folder]; panel.message = L("Import ZIP files, extracted maps, or a folder containing several songs.", "导入 ZIP、已解压谱面，或一个包含多首歌曲的分类文件夹。"); panel.prompt = L("Import", "导入")
         if panel.runModal() == .OK { importURLs(panel.urls) }
     }
     func importURLs(_ urls: [URL]) {
@@ -206,19 +225,19 @@ final class LibraryModel: ObservableObject {
         let action = renameOnly ? "rename" : "update"
         invoke([action, "--root", root, "--name", appName, "--device", deviceID]) { [weak self] value in
             guard let self, let result = value as? [String: Any] else { return }
-            if result["noChanges"] as? Bool == true { self.notice = "头显曲库已经是最新，无需重复处理或传输。"; return }
-            let f = DateFormatter(); f.dateFormat = "MM-dd HH:mm"
+            if result["noChanges"] as? Bool == true { self.notice = L("Your headset library is up to date. No processing or transfer is needed.", "头显曲库已经是最新，无需重复处理或传输。"); return }
+            let f = DateFormatter(); f.locale = Locale(identifier: self.language); f.dateFormat = "MM-dd HH:mm"
             self.lastUpdate = f.string(from: Date()); UserDefaults.standard.set(self.lastUpdate, forKey: "lastUpdate")
             let launched = result["launchSucceeded"] as? Bool ?? false
             let same = result["scoresUnchanged"] as? Bool ?? false
-            self.notice = (renameOnly ? "应用名称已更新。" : "曲库与应用名称已更新。") + (same ? "成绩记录已保留。" : "更新前后的成绩均已备份。") + (launched ? "可以在头显中打开使用。" : "请在头显中完全退出后，手动打开「\(self.appName)」。")
+            self.notice = (renameOnly ? L("App name updated. ", "应用名称已更新。") : L("Library and app name updated. ", "曲库与应用名称已更新。")) + (same ? L("Scores preserved. ", "成绩记录已保留。") : L("Scores before and after the update have been backed up. ", "更新前后的成绩均已备份。")) + (launched ? L("You can now open the app on your headset.", "可以在头显中打开使用。") : L("Fully quit the headset app, then open “\(self.appName)” manually.", "请在头显中完全退出后，手动打开「\(self.appName)」。"))
         }
     }
     func buildOnly() {
-        invoke(["build", "--root", root]) { [weak self] _ in self?.notice = "曲库已生成并通过校验。需要传到头显时，点击「一键更新头显」。" }
+        invoke(["build", "--root", root]) { [weak self] _ in self?.notice = L("Library built and verified. Click “Update Headset” to transfer it.", "曲库已生成并通过校验。需要传到头显时，点击「一键更新头显」。") }
     }
     func invoke(_ arguments: [String], quiet: Bool = false, discoveringTask: Bool = false, done: @escaping (Any) -> Void) {
-        if !quiet { busy = true; status = "正在处理…"; logs = [] }
+        if !quiet { busy = true; status = L("Processing…", "正在处理…"); logs = [] }
         else if !discoveringTask { scanning = true }
         let base = resource
         DispatchQueue.global(qos: .userInitiated).async {
@@ -226,6 +245,8 @@ final class LibraryModel: ObservableObject {
             process.executableURL = base.appendingPathComponent("runtime/bin/python3")
             process.arguments = ["-u", base.appendingPathComponent("backend.py").path] + arguments
             var env = ProcessInfo.processInfo.environment
+            env["SABERDOCK_LANGUAGE"] = self.language
+            env["LANG"] = self.language == "zh-Hans" ? "zh_CN.UTF-8" : "en_US.UTF-8"
             env["PYTHONHOME"] = base.appendingPathComponent("runtime").path
             env["PYTHONPATH"] = base.appendingPathComponent("python-libs").path
             env["PYTHONDONTWRITEBYTECODE"] = "1"; env["PYTHONIOENCODING"] = "utf-8"
@@ -261,11 +282,11 @@ final class LibraryModel: ObservableObject {
                 else if quiet { self.scanning = false }
                 else { self.busy = false }
                 if let failure {
-                    if !quiet { self.error = failure; self.status = "操作未完成" }
+                    if !quiet { self.error = failure; self.status = L("Operation Incomplete", "操作未完成") }
                     else if discoveringTask { self.headsets = [] }
                 } else if let result {
                     done(result)
-                    if !quiet { self.status = "就绪" }
+                    if !quiet { self.status = L("Ready", "就绪") }
                 }
             }
         }
@@ -294,59 +315,59 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 10) {
                     Image(systemName: "music.note.house.fill").font(.system(size: 24)).foregroundStyle(.blue)
-                    VStack(alignment: .leading) { Text("SaberDock 曲库").font(.headline); Text("文件夹就是曲包").font(.caption).foregroundStyle(.secondary) }
+                    VStack(alignment: .leading) { Text("SaberDock").font(.headline); Text(L("Folders become playlists", "文件夹就是曲包")).font(.caption).foregroundStyle(.secondary) }
                 }.padding(18)
                 List(selection: $model.selected) {
-                    Section("我的曲包") {
+                    Section(L("My Playlists", "我的曲包")) {
                         ForEach(model.library?.playlists ?? []) { group in
                             HStack { Label(group.name, systemImage: "music.note.list"); Spacer(); Text("\(group.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }.tag(group.path)
                         }
                     }
                 }.listStyle(.sidebar)
-                HStack { Button { newName = ""; adding = true } label: { Label("新建曲包", systemImage: "plus") }; Spacer(); Button { model.chooseRoot() } label: { Image(systemName: "gearshape") }.help("更改曲库位置") }.buttonStyle(.borderless).padding(14).disabled(model.unavailable)
+                HStack { Button { newName = ""; adding = true } label: { Label(L("New Playlist", "新建曲包"), systemImage: "plus") }; Spacer(); Button { model.chooseRoot() } label: { Image(systemName: "gearshape") }.help(L("Change library location", "更改曲库位置")) }.buttonStyle(.borderless).padding(14).disabled(model.unavailable)
                 Divider()
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("\(model.library?.uniqueSongs ?? 0) 份谱面 · \(model.library?.playlists.filter { $0.count > 0 }.count ?? 0) 个曲包").font(.caption)
-                    Button { NSWorkspace.shared.open(URL(fileURLWithPath: model.root)) } label: { Label("打开曲库文件夹", systemImage: "folder") }.buttonStyle(.link)
+                    Text(L("\(model.library?.uniqueSongs ?? 0) maps · \(model.library?.playlists.filter { $0.count > 0 }.count ?? 0) playlists", "\(model.library?.uniqueSongs ?? 0) 份谱面 · \(model.library?.playlists.filter { $0.count > 0 }.count ?? 0) 个曲包")).font(.caption)
+                    Button { NSWorkspace.shared.open(URL(fileURLWithPath: model.root)) } label: { Label(L("Open Library Folder", "打开曲库文件夹"), systemImage: "folder") }.buttonStyle(.link)
                 }.padding(16)
             }.navigationSplitViewColumnWidth(min: 220, ideal: 245, max: 340)
         } detail: {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 5) { Text(model.current?.name ?? "我的曲库").font(.largeTitle.weight(.semibold)); Text("拖入 ZIP 或已解压的谱面；文件夹中的改动会自动显示。").foregroundStyle(.secondary) }
+                    VStack(alignment: .leading, spacing: 5) { Text(model.current?.name ?? L("My Library", "我的曲库")).font(.largeTitle.weight(.semibold)); Text(L("Drop ZIP files or extracted maps. Folder changes appear automatically.", "拖入 ZIP 或已解压的谱面；文件夹中的改动会自动显示。")).foregroundStyle(.secondary) }
                     Spacer()
                     Menu {
-                        Button("按歌名排序") { model.sortSongs("title") }
-                        Button("按歌手排序") { model.sortSongs("artist") }
-                        Button("按谱师排序") { model.sortSongs("mapper") }
-                        Button("倒转当前顺序") { model.sortSongs("reverse") }
-                    } label: { Label("排序", systemImage: "arrow.up.arrow.down") }.disabled(model.current?.songs.isEmpty ?? true)
-                    Button { model.restoreSong() } label: { Image(systemName: "arrow.uturn.backward") }.help("恢复上次删除的歌曲").disabled(!(model.library?.canRestore ?? false))
-                    Button { model.openLibrary() } label: { Image(systemName: "folder") }.help("在访达中打开此曲包")
-                    Button { model.importDialog() } label: { Label("导入谱面", systemImage: "plus") }
+                        Button(L("Sort by Song Title", "按歌名排序")) { model.sortSongs("title") }
+                        Button(L("Sort by Artist", "按歌手排序")) { model.sortSongs("artist") }
+                        Button(L("Sort by Mapper", "按谱师排序")) { model.sortSongs("mapper") }
+                        Button(L("Reverse Current Order", "倒转当前顺序")) { model.sortSongs("reverse") }
+                    } label: { Label(L("Sort", "排序"), systemImage: "arrow.up.arrow.down") }.disabled(model.current?.songs.isEmpty ?? true)
+                    Button { model.restoreSong() } label: { Image(systemName: "arrow.uturn.backward") }.help(L("Restore the last deleted song", "恢复上次删除的歌曲")).disabled(!(model.library?.canRestore ?? false))
+                    Button { model.openLibrary() } label: { Image(systemName: "folder") }.help(L("Open this playlist in Finder", "在访达中打开此曲包"))
+                    Button { model.importDialog() } label: { Label(L("Import Maps", "导入谱面"), systemImage: "plus") }
                 }.padding(24).disabled(model.unavailable)
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Label("头显应用名称", systemImage: "visionpro")
-                        TextField("应用名称", text: $model.appName, onEditingChanged: { model.editingName = $0 }).textFieldStyle(.roundedBorder).frame(maxWidth: 310).onChange(of: model.appName) { model.persist() }
-                        Button("仅改名称") { model.update(renameOnly: true) }.disabled(model.appName.trimmingCharacters(in: .whitespaces).isEmpty)
+                        Label(L("Headset App Name", "头显应用名称"), systemImage: "visionpro")
+                        TextField(L("App name", "应用名称"), text: $model.appName, onEditingChanged: { model.editingName = $0 }).textFieldStyle(.roundedBorder).frame(maxWidth: 310).onChange(of: model.appName) { model.persist() }
+                        Button(L("Rename Only", "仅改名称")) { model.update(renameOnly: true) }.disabled(model.appName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                     HStack {
-                        Picker("更新到", selection: $model.deviceID) {
-                            Text("自动选择 Vision Pro").tag("")
+                        Picker(L("Update To", "更新到"), selection: $model.deviceID) {
+                            Text(L("Select Vision Pro Automatically", "自动选择 Vision Pro")).tag("")
                             ForEach(model.headsets) { device in Text(device.name + " · Vision Pro").tag(device.id) }
                         }.frame(maxWidth: 410).onChange(of: model.deviceID) { model.persist() }
-                        Button { model.discover() } label: { Image(systemName: "arrow.clockwise") }.help("刷新头显")
+                        Button { model.discover() } label: { Image(systemName: "arrow.clockwise") }.help(L("Refresh headsets", "刷新头显"))
                         Spacer()
-                        Text(model.headsets.isEmpty ? "请解锁头显并连接同一 Wi-Fi" : "已发现 \(model.headsets.count) 台头显").font(.caption).foregroundStyle(.secondary)
+                        Text(model.headsets.isEmpty ? L("Unlock your headset and connect to the same Wi-Fi", "请解锁头显并连接同一 Wi-Fi") : L("\(model.headsets.count) headset(s) found", "已发现 \(model.headsets.count) 台头显")).font(.caption).foregroundStyle(.secondary)
                     }
                 }.padding(18).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 12)).padding(.horizontal, 24).disabled(model.unavailable)
                 HStack {
-                    Label(model.environment?.ready == true ? "AVP Play · 1.40.8 文件已就绪" : "请先检查 AVP Play 安装设置", systemImage: model.environment?.ready == true ? "checkmark.circle" : "exclamationmark.circle").font(.caption).foregroundStyle(model.environment?.ready == true ? Color.secondary : Color.orange)
-                    Spacer(); Button("安装设置…") { model.setupOpen = true }.buttonStyle(.link).disabled(model.unavailable)
+                    Label(model.environment?.ready == true ? L("AVP Play · 1.40.8 files ready", "AVP Play · 1.40.8 文件已就绪") : L("Check your AVP Play installation settings", "请先检查 AVP Play 安装设置"), systemImage: model.environment?.ready == true ? "checkmark.circle" : "exclamationmark.circle").font(.caption).foregroundStyle(model.environment?.ready == true ? Color.secondary : Color.orange)
+                    Spacer(); Button(L("Installation Settings…", "安装设置…")) { model.setupOpen = true }.buttonStyle(.link).disabled(model.unavailable)
                 }.padding(.horizontal, 24).padding(.top, 12)
                 if let errors = model.library?.errors, !errors.isEmpty {
-                    DisclosureGroup { ForEach(errors, id: \.self) { Text($0).font(.caption).textSelection(.enabled) } } label: { Label("\(errors.count) 项需要处理，更新前请移除或修正", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }.padding(.horizontal, 24).padding(.top, 16)
+                    DisclosureGroup { ForEach(errors, id: \.self) { Text($0).font(.caption).textSelection(.enabled) } } label: { Label(L("\(errors.count) issue(s) to resolve before updating", "\(errors.count) 项需要处理，更新前请移除或修正"), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }.padding(.horizontal, 24).padding(.top, 16)
                 }
                 ZStack {
                     if let group = model.current, !group.songs.isEmpty {
@@ -362,21 +383,21 @@ struct ContentView: View {
                                 }
                                 Spacer()
                                 if !song.warnings.isEmpty { Image(systemName: "sparkles").foregroundStyle(.orange).help(song.warnings.joined(separator: "\n")) }
-                                Button { model.moveSong(song, by: -1) } label: { Image(systemName: "chevron.up") }.buttonStyle(.borderless).help("上移").disabled(model.unavailable || group.songs.first?.id == song.id)
-                                Button { model.moveSong(song, by: 1) } label: { Image(systemName: "chevron.down") }.buttonStyle(.borderless).help("下移").disabled(model.unavailable || group.songs.last?.id == song.id)
-                                Button(role: .destructive) { deleteCategory = group.name; pendingDelete = song } label: { Image(systemName: "trash") }.buttonStyle(.borderless).help("从此曲包删除").disabled(model.unavailable)
-                                Button { model.openSongSource(song) } label: { Image(systemName: "folder") }.buttonStyle(.borderless).help("在访达中打开源谱面；ZIP 会显示其所在文件夹并选中原文件")
+                                Button { model.moveSong(song, by: -1) } label: { Image(systemName: "chevron.up") }.buttonStyle(.borderless).help(L("Move up", "上移")).disabled(model.unavailable || group.songs.first?.id == song.id)
+                                Button { model.moveSong(song, by: 1) } label: { Image(systemName: "chevron.down") }.buttonStyle(.borderless).help(L("Move down", "下移")).disabled(model.unavailable || group.songs.last?.id == song.id)
+                                Button(role: .destructive) { deleteCategory = group.name; pendingDelete = song } label: { Image(systemName: "trash") }.buttonStyle(.borderless).help(L("Remove from this playlist", "从此曲包删除")).disabled(model.unavailable)
+                                Button { model.openSongSource(song) } label: { Image(systemName: "folder") }.buttonStyle(.borderless).help(L("Open the source in Finder; ZIP files are revealed in their containing folder", "在访达中打开源谱面；ZIP 会显示其所在文件夹并选中原文件"))
                             }.padding(.vertical, 7)
                             .contextMenu {
-                                Button("上移") { model.moveSong(song, by: -1) }.disabled(model.unavailable || group.songs.first?.id == song.id)
-                                Button("下移") { model.moveSong(song, by: 1) }.disabled(model.unavailable || group.songs.last?.id == song.id)
+                                Button(L("Move up", "上移")) { model.moveSong(song, by: -1) }.disabled(model.unavailable || group.songs.first?.id == song.id)
+                                Button(L("Move down", "下移")) { model.moveSong(song, by: 1) }.disabled(model.unavailable || group.songs.last?.id == song.id)
                                 Divider()
-                                Button("删除「\(song.title)」", role: .destructive) { deleteCategory = group.name; pendingDelete = song }.disabled(model.unavailable)
+                                Button(L("Delete “\(song.title)”", "删除「\(song.title)」"), role: .destructive) { deleteCategory = group.name; pendingDelete = song }.disabled(model.unavailable)
                             }
                           }.onMove { model.moveSongs(from: $0, to: $1) }
                         }.listStyle(.inset)
                     } else {
-                        VStack(spacing: 12) { Image(systemName: "square.and.arrow.down.on.square").font(.system(size: 42)).foregroundStyle(.blue); Text("把谱面拖到这里").font(.title2.weight(.medium)); Text("ZIP 或谱面文件夹会加入当前曲包\n整份分类文件夹会建立同名曲包").multilineTextAlignment(.center).foregroundStyle(.secondary); Button("选择谱面…") { model.importDialog() }.disabled(model.unavailable) }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                        VStack(spacing: 12) { Image(systemName: "square.and.arrow.down.on.square").font(.system(size: 42)).foregroundStyle(.blue); Text(L("Drop maps here", "把谱面拖到这里")).font(.title2.weight(.medium)); Text(L("ZIP files and map folders join the selected playlist\nA category folder creates a playlist with the same name", "ZIP 或谱面文件夹会加入当前曲包\n整份分类文件夹会建立同名曲包")).multilineTextAlignment(.center).foregroundStyle(.secondary); Button(L("Choose Maps…", "选择谱面…")) { model.importDialog() }.disabled(model.unavailable) }.frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                     if hovering { RoundedRectangle(cornerRadius: 14).fill(.blue.opacity(0.12)).overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(.blue, style: StrokeStyle(lineWidth: 2, dash: [8])) }.padding(12).allowsHitTesting(false) }
                 }.onDrop(of: [UTType.fileURL], isTargeted: $hovering) { model.drop($0) }
@@ -384,33 +405,39 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 12) {
                         if model.busy || model.scanning { ProgressView().controlSize(.small) }
-                        VStack(alignment: .leading, spacing: 3) { Text(model.busy ? model.status : (model.scanning ? "正在扫描曲库…" : "就绪 · 上次更新 \(model.lastUpdate)")).font(.subheadline); Text("只处理新增或修改曲目 · 排序与删除将在下次同步生效").font(.caption).foregroundStyle(.secondary) }
+                        VStack(alignment: .leading, spacing: 3) { Text(model.busy ? model.status : (model.scanning ? L("Scanning library…", "正在扫描曲库…") : L("Ready · Last update: \(model.lastUpdate.isEmpty ? L("Never", "尚未更新") : model.lastUpdate)", "就绪 · 上次更新 \(model.lastUpdate.isEmpty ? L("Never", "尚未更新") : model.lastUpdate)"))).font(.subheadline); Text(L("Only new or changed songs are processed · Order and deletions apply at the next sync", "只处理新增或修改曲目 · 排序与删除将在下次同步生效")).font(.caption).foregroundStyle(.secondary) }
                         Spacer()
-                        Button("首次安装 / 修复") { model.firstInstall() }.disabled(model.unavailable || !(model.environment?.ready ?? false) || model.team.count != 10 || !(model.library?.errors.isEmpty ?? true))
-                        Button("仅生成曲库") { model.buildOnly() }.disabled(model.unavailable)
-                        Button { model.update() } label: { Label(model.busy ? "正在处理…" : "一键更新头显", systemImage: "arrow.up.doc.fill").padding(.vertical, 5) }.buttonStyle(.borderedProminent).disabled(model.unavailable || !(model.library?.errors.isEmpty ?? true) || model.appName.trimmingCharacters(in: .whitespaces).isEmpty)
+                        Button(L("Install / Repair", "首次安装 / 修复")) { model.firstInstall() }.disabled(model.unavailable || !(model.environment?.ready ?? false) || model.team.count != 10 || !(model.library?.errors.isEmpty ?? true))
+                        Button(L("Build Library Only", "仅生成曲库")) { model.buildOnly() }.disabled(model.unavailable)
+                        Button { model.update() } label: { Label(model.busy ? L("Processing…", "正在处理…") : L("Update Headset", "一键更新头显"), systemImage: "arrow.up.doc.fill").padding(.vertical, 5) }.buttonStyle(.borderedProminent).disabled(model.unavailable || !(model.library?.errors.isEmpty ?? true) || model.appName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
-                    DisclosureGroup("处理详情", isExpanded: $showLogs) {
+                    DisclosureGroup(L("Activity Details", "处理详情"), isExpanded: $showLogs) {
                         ScrollView { Text(model.logs.suffix(100).joined(separator: "\n")).font(.system(.caption, design: .monospaced)).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled) }.frame(height: 100)
                     }.font(.caption)
                 }.padding(20)
             }.frame(minWidth: 700, minHeight: 620)
         }.frame(minWidth: 980, minHeight: 700)
+        .environment(\.locale, Locale(identifier: model.language))
         .toolbar {
-            Button { model.setupOpen = true } label: { Label("安装设置", systemImage: "gearshape") }.disabled(model.unavailable)
-            Button { model.refresh() } label: { Label("刷新曲库", systemImage: "arrow.clockwise") }.disabled(model.unavailable)
+            Picker("Language", selection: $model.language) {
+                Text("English").tag("en")
+                Text("简体中文").tag("zh-Hans")
+            }.fixedSize().disabled(model.unavailable)
+
+            Button { model.setupOpen = true } label: { Label(L("Installation Settings", "安装设置"), systemImage: "gearshape") }.disabled(model.unavailable)
+            Button { model.refresh() } label: { Label(L("Refresh Library", "刷新曲库"), systemImage: "arrow.clockwise") }.disabled(model.unavailable)
         }
         .sheet(isPresented: $model.setupOpen) {
             VStack(alignment: .leading, spacing: 16) {
-                Text("连接你的 AVP Play").font(.title2.bold())
-                Text("复用你已下载的 Beat Saber 1.40.8，用你自己的 Xcode 账户签名并安装独立应用。").foregroundStyle(.secondary)
+                Text(L("Connect Your AVP Play", "连接你的 AVP Play")).font(.title2.bold())
+                Text(L("Use your locally downloaded Beat Saber 1.40.8 files and your own Xcode account to sign and install a separate headset app.", "复用你已下载的 Beat Saber 1.40.8，用你自己的 Xcode 账户签名并安装独立应用。")).foregroundStyle(.secondary)
                 ForEach(model.environment?.issues ?? [], id: \.self) { Text($0).font(.callout).foregroundStyle(.orange).textSelection(.enabled) }
-                HStack { Text("AVP Play 应用").frame(width: 110, alignment: .leading); TextField("AVP Play.app", text: $model.avpApp); Button("选择…") { model.selectEnvironmentPath("app") } }
-                HStack { Text("AVP Play 数据").frame(width: 110, alignment: .leading); TextField("含 toolchains 与 jobs 的目录", text: $model.avpRoot); Button("选择…") { model.selectEnvironmentPath("data") } }
-                HStack { Text("游戏下载目录").frame(width: 110, alignment: .leading); TextField("含 beatsaber140-1716 的目录", text: $model.store); Button("选择…") { model.selectEnvironmentPath("store") } }
-                HStack { Text("Apple 团队 ID").frame(width: 110, alignment: .leading); TextField("自己的 10 位团队 ID", text: $model.team) }
-                Text("团队 ID 可从 AVP Play 最近的安装记录自动读取；也可在 Xcode → Settings → Accounts 中确认。需要 Xcode、visionOS SDK、开发者模式和已配对的 Vision Pro。").font(.caption).foregroundStyle(.secondary)
-                HStack { Button("打开 AVP Play") { if !model.avpApp.isEmpty { NSWorkspace.shared.open(URL(fileURLWithPath: model.avpApp)) } }; Spacer(); Button("关闭") { model.setupOpen = false }; Button("保存并检查") { model.saveEnvironment() }.buttonStyle(.borderedProminent) }
+                HStack { Text(L("AVP Play App", "AVP Play 应用")).frame(width: 110, alignment: .leading); TextField("AVP Play.app", text: $model.avpApp); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("app") } }
+                HStack { Text(L("AVP Play Data", "AVP Play 数据")).frame(width: 110, alignment: .leading); TextField(L("Folder containing toolchains and jobs", "含 toolchains 与 jobs 的目录"), text: $model.avpRoot); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("data") } }
+                HStack { Text(L("Game Downloads", "游戏下载目录")).frame(width: 110, alignment: .leading); TextField(L("Folder containing beatsaber140-1716", "含 beatsaber140-1716 的目录"), text: $model.store); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("store") } }
+                HStack { Text(L("Apple Team ID", "Apple 团队 ID")).frame(width: 110, alignment: .leading); TextField(L("Your own 10-character team ID", "自己的 10 位团队 ID"), text: $model.team) }
+                Text(L("Your team ID can be read from recent AVP Play installations or checked in Xcode → Settings → Accounts. Requires Xcode, a visionOS SDK, Developer Mode, and a paired Vision Pro.", "团队 ID 可从 AVP Play 最近的安装记录自动读取；也可在 Xcode → Settings → Accounts 中确认。需要 Xcode、visionOS SDK、开发者模式和已配对的 Vision Pro。")).font(.caption).foregroundStyle(.secondary)
+                HStack { Button(L("Open AVP Play", "打开 AVP Play")) { if !model.avpApp.isEmpty { NSWorkspace.shared.open(URL(fileURLWithPath: model.avpApp)) } }; Spacer(); Button(L("Close", "关闭")) { model.setupOpen = false }; Button(L("Save and Check", "保存并检查")) { model.saveEnvironment() }.buttonStyle(.borderedProminent) }
             }.padding(28).frame(width: 700).textFieldStyle(.roundedBorder).disabled(model.unavailable)
         }
         .onAppear {
@@ -426,15 +453,15 @@ struct ContentView: View {
                 }
             }
         }
-        .alert("删除歌曲？", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
-            Button("取消", role: .cancel) { pendingDelete = nil }
-            Button("删除", role: .destructive) { if let song = pendingDelete { model.deleteSong(song, category: deleteCategory) }; pendingDelete = nil }
-        } message: { Text("将「\(pendingDelete?.title ?? "")」从「\(deleteCategory)」移除，下次同步时更新到头显。可用顶部恢复按钮撤销删除；其他曲包中的同一首歌会保留。") }
-        .alert("新建曲包", isPresented: $adding) { TextField("文件夹 / 曲包名称", text: $newName); Button("取消", role: .cancel) {}; Button("创建") { model.create(newName) } } message: { Text("新建的文件夹名称会直接成为头显中的曲包名称。") }
-        .alert("操作未完成", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) { Button("知道了", role: .cancel) {} } message: { Text(model.error ?? "") }
-        .alert("完成", isPresented: Binding(get: { model.notice != nil }, set: { if !$0 { model.notice = nil } })) { Button("好", role: .cancel) {} } message: { Text(model.notice ?? "") }
+        .alert(L("Delete Song?", "删除歌曲？"), isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
+            Button(L("Cancel", "取消"), role: .cancel) { pendingDelete = nil }
+            Button(L("Delete", "删除"), role: .destructive) { if let song = pendingDelete { model.deleteSong(song, category: deleteCategory) }; pendingDelete = nil }
+        } message: { Text(L("Remove “\(pendingDelete?.title ?? "")” from “\(deleteCategory)” at the next sync. Use the restore button to undo. Copies in other playlists are kept.", "将「\(pendingDelete?.title ?? "")」从「\(deleteCategory)」移除，下次同步时更新到头显。可用顶部恢复按钮撤销删除；其他曲包中的同一首歌会保留。")) }
+        .alert(L("New Playlist", "新建曲包"), isPresented: $adding) { TextField(L("Folder / playlist name", "文件夹 / 曲包名称"), text: $newName); Button(L("Cancel", "取消"), role: .cancel) {}; Button(L("Create", "创建")) { model.create(newName) } } message: { Text(L("The folder name becomes the playlist name on your headset.", "新建的文件夹名称会直接成为头显中的曲包名称。")) }
+        .alert(L("Operation Incomplete", "操作未完成"), isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) { Button(L("OK", "知道了"), role: .cancel) {} } message: { Text(model.error ?? "") }
+        .alert(L("Done", "完成"), isPresented: Binding(get: { model.notice != nil }, set: { if !$0 { model.notice = nil } })) { Button(L("OK", "好"), role: .cancel) {} } message: { Text(model.notice ?? "") }
     }
 }
 @main struct SaberLibraryApp: App {
-    var body: some Scene { WindowGroup("SaberDock 曲库") { ContentView().preferredColorScheme(.light) }.defaultSize(width: 1120, height: 780).commands { CommandGroup(replacing: .newItem) {} } }
+    var body: some Scene { WindowGroup("SaberDock") { ContentView().preferredColorScheme(.light) }.defaultSize(width: 1120, height: 780).commands { CommandGroup(replacing: .newItem) {} } }
 }

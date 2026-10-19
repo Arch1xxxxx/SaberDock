@@ -1,3 +1,4 @@
+from i18n import tr
 #!/usr/bin/env python3
 import uuid
 import integration
@@ -19,17 +20,17 @@ def read_json(p,default=None):
 
 def local(folder,name):
  p=(folder/name).resolve()
- if not p.is_relative_to(folder.resolve()):raise ValueError('谱面引用了文件夹之外的文件')
+ if not p.is_relative_to(folder.resolve()):raise ValueError(tr('谱面引用了文件夹之外的文件'))
  return p
 
 def info_files(folder):
  return sorted((p for p in folder.rglob('*') if p.is_file() and p.name.lower()=='info.dat' and not any(v.startswith('.') or v=='__MACOSX' for v in p.relative_to(folder).parts)),key=str)
 def unzip_safe(file,target):
  with zipfile.ZipFile(file) as z:
-  if len(z.infolist())>10000 or sum(i.file_size for i in z.infolist())>5*1024**3:raise ValueError('谱面 ZIP 太大或文件数量过多')
+  if len(z.infolist())>10000 or sum(i.file_size for i in z.infolist())>5*1024**3:raise ValueError(tr('谱面 ZIP 太大或文件数量过多'))
   for i in z.infolist():
    p=(target/i.filename).resolve()
-   if not p.is_relative_to(target.resolve()) or ((i.external_attr>>16)&0o170000)==0o120000:raise ValueError('ZIP 含有不安全的路径或符号链接')
+   if not p.is_relative_to(target.resolve()) or ((i.external_attr>>16)&0o170000)==0o120000:raise ValueError(tr('ZIP 含有不安全的路径或符号链接'))
   z.extractall(target)
 
 def fingerprint(folder,info,raw,cache):
@@ -50,21 +51,21 @@ def library_state(root):return read_json(state_file(root),{'orders':{},'deleted'
 def manage(root,category,action,ids):
  root=Path(root).expanduser().resolve();library=scan(root);state=library_state(root)
  group=next((g for g in library['playlists'] if g['name']==category),None)
- if not group and action!='restore':raise ValueError('找不到所选曲包，请刷新后重试')
+ if not group and action!='restore':raise ValueError(tr('找不到所选曲包，请刷新后重试'))
  songs=group['songs'] if group else [];lookup={s['id']:s for s in songs}
  if action=='order':
-  if len(ids)!=len(set(ids)) or set(ids)!=set(lookup):raise ValueError('曲库刚刚发生变化，请刷新后重新排序')
+  if len(ids)!=len(set(ids)) or set(ids)!=set(lookup):raise ValueError(tr('曲库刚刚发生变化，请刷新后重新排序'))
   state.setdefault('orders',{})[category]=ids
  elif action=='delete':
-  if len(ids)!=1 or ids[0] not in lookup:raise ValueError('所选歌曲已发生变化，请刷新后重试')
+  if len(ids)!=1 or ids[0] not in lookup:raise ValueError(tr('所选歌曲已发生变化，请刷新后重试'))
   song=lookup[ids[0]];source=Path(song['sourcePath']);group_path=Path(group['path']).resolve()
-  if not source.resolve().is_relative_to(group_path):raise ValueError('不能删除曲库以外的源文件')
+  if not source.resolve().is_relative_to(group_path):raise ValueError(tr('不能删除曲库以外的源文件'))
   moved=False;target=None
   # A ZIP containing several maps stays intact; only this map is excluded.
   movable=(source.suffix.lower()=='.zip' and len(info_files(Path(song['archiveRoot'])))==1) if song.get('archiveRoot') else (source!=group_path and len(info_files(source))==1 and not any(p.suffix.lower()=='.zip' for p in source.rglob('*')))
   record={'category':category,'id':song['id'],'title':song['title'],'source':str(source),'moved':False}
   if movable:
-   target=root/'.曲库回收站'/uuid.uuid4().hex/source.name;target.parent.mkdir(parents=True);shutil.move(str(source),target);record.update(moved=True,trash=str(target))
+   target=root/'.library-trash'/uuid.uuid4().hex/source.name;target.parent.mkdir(parents=True);shutil.move(str(source),target);record.update(moved=True,trash=str(target))
   state.setdefault('deleted',{}).setdefault(category,[]).append(song['id']);state.setdefault('history',[]).append(record)
   try:atomic(state_file(root),state)
   except Exception:
@@ -73,16 +74,16 @@ def manage(root,category,action,ids):
   return scan(root)
  elif action=='restore':
   history=state.setdefault('history',[])
-  if not history:raise ValueError('没有可以恢复的歌曲')
+  if not history:raise ValueError(tr('没有可以恢复的歌曲'))
   record=history[-1]
   if record['moved']:
    source=Path(record['source']);target=Path(record['trash'])
-   if not source.is_relative_to(root) or not target.is_relative_to(root/'.曲库回收站'):raise ValueError('回收站记录路径无效')
-   if source.exists():raise ValueError('原位置已有同名文件，请先在访达中改名后再恢复')
+   if not source.is_relative_to(root) or not any(target.is_relative_to(root/name) for name in ['.library-trash','.曲库回收站']):raise ValueError(tr('回收站记录路径无效'))
+   if source.exists():raise ValueError(tr('原位置已有同名文件，请先在访达中改名后再恢复'))
    source.parent.mkdir(parents=True,exist_ok=True);shutil.move(str(target),source)
   history.pop();deleted=state.setdefault('deleted',{}).setdefault(record['category'],[])
   if record['id'] in deleted:deleted.remove(record['id'])
- else:raise ValueError('未知的管理操作')
+ else:raise ValueError(tr('未知的管理操作'))
  atomic(state_file(root),state);return scan(root)
 
 def folder_stamp(folder):
@@ -107,7 +108,7 @@ def scan(root):
   for p,source,archive_root in sources:
    title=p.parent.name
    try:
-    record_key='song:'+str(p);stamp=folder_stamp(p.parent);record=cache.get(record_key)
+    record_key='song:'+os.environ.get('SABERDOCK_LANGUAGE','en')+':'+str(p);stamp=folder_stamp(p.parent);record=cache.get(record_key)
     if record and record.get('stamp')==stamp:
      song=dict(record['song']);song.update(sourcePath=str(source),archiveRoot=str(archive_root) if archive_root else None)
      if song['id'] not in seen and song['id'] not in state.get('deleted',{}).get(group.name,[]):songs.append(song);seen.add(song['id'])
@@ -117,10 +118,10 @@ def scan(root):
      title=info['_songName'];artist=info.get('_songAuthorName','');mapper=info.get('_levelAuthorName','');cover=info.get('_coverImageFilename','');std=next((s['_difficultyBeatmaps'] for s in info['_difficultyBeatmapSets'] if s['_beatmapCharacteristicName']=='Standard'),[]);diffs=[d['_difficulty'] for d in std];req=[r for d in std for r in d.get('_customData',{}).get('_requirements',[])];suggestions=[r for d in std for r in d.get('_customData',{}).get('_suggestions',[])]
     else:
      title=info['song']['title'];artist=info['song'].get('author','');cover=info['coverImageFilename'];std=[s for s in info.get('difficultyBeatmaps',[]) if s.get('characteristic')=='Standard'];diffs=[s['difficulty'] for s in std];mapper=', '.join(sorted({v for s in std for v in s.get('beatmapAuthors',{}).get('mappers',[])}));req=[r for s in std for r in s.get('customData',{}).get('requirements',[])];suggestions=[]
-    if not std:raise ValueError('没有 Standard 标准双剑难度')
-    if req:raise ValueError('需要 Quest 插件：'+', '.join(sorted(set(req))))
+    if not std:raise ValueError(tr('没有 Standard 标准双剑难度'))
+    if req:raise ValueError(tr('需要 Quest 插件：')+', '.join(sorted(set(req))))
     coverpath=local(folder,cover)
-    if not coverpath.is_file():raise ValueError('缺少封面图片')
+    if not coverpath.is_file():raise ValueError(tr('缺少封面图片'))
     legacy_info=dict(info)
     if '_songName' in info:legacy_info['_coverImageFilename']=''
     else:legacy_info['coverImageFilename']=''
@@ -128,7 +129,7 @@ def scan(root):
     if ident in seen or ident in state.get('deleted',{}).get(group.name,[]):continue
     seen.add(ident)
     level=registry.get(ident) or 'SaberCustom'+ident[:20];registry[ident]=level
-    songs.append({'id':ident,'contentKey':content,'levelId':level,'title':title,'artist':artist,'mapper':mapper,'difficulties':diffs,'folder':str(folder),'infoPath':str(p),'cover':str(coverpath),'sourcePath':str(source),'archiveRoot':str(archive_root) if archive_root else None,'warnings':['可选插件效果不会导入：'+', '.join(sorted(set(suggestions)))] if suggestions else []});cache[record_key]={'stamp':stamp,'song':songs[-1]}
+    songs.append({'id':ident,'contentKey':content,'levelId':level,'title':title,'artist':artist,'mapper':mapper,'difficulties':diffs,'folder':str(folder),'infoPath':str(p),'cover':str(coverpath),'sourcePath':str(source),'archiveRoot':str(archive_root) if archive_root else None,'warnings':[tr('可选插件效果不会导入：')+', '.join(sorted(set(suggestions)))] if suggestions else []});cache[record_key]={'stamp':stamp,'song':songs[-1]}
    except Exception as e:errors.append(f'{group.name} / {title}：{e}')
   order=state.get('orders',{}).get(group.name,[]);positions={v:i for i,v in enumerate(order)}
   songs.sort(key=lambda s:(positions.get(s['id'],len(order)),s['title'].casefold(),s['mapper'].casefold()));groups.append({'name':group.name,'path':str(group),'songs':songs,'count':len(songs)})
@@ -137,7 +138,7 @@ def scan(root):
 
 def safe_name(s):
  name=s.strip()
- if not name or name in ['.','..'] or '/' in name or '\0' in name:raise ValueError('请输入有效的文件夹名称')
+ if not name or name in ['.','..'] or '/' in name or '\0' in name:raise ValueError(tr('请输入有效的文件夹名称'))
  return name
 
 def init(root):
@@ -151,26 +152,26 @@ def import_paths(root,category,paths):
  for raw in paths:
   src=Path(raw).resolve()
   if src.is_relative_to(root.resolve()):continue
-  if src.is_dir() and not info_files(src) and not any(p.suffix.lower()=='.zip' for p in src.rglob('*')):raise ValueError('该文件夹内没有找到谱面或 ZIP')
+  if src.is_dir() and not info_files(src) and not any(p.suffix.lower()=='.zip' for p in src.rglob('*')):raise ValueError(tr('该文件夹内没有找到谱面或 ZIP'))
   if src.is_dir() and not any(p.name.lower()=='info.dat' for p in src.iterdir()):
    dst=root/safe_name(src.name)
   else:
-   if not category:raise ValueError('请先选择一个曲包，或先创建新曲包')
+   if not category:raise ValueError(tr('请先选择一个曲包，或先创建新曲包'))
    target=root/safe_name(category);target.mkdir(exist_ok=True);dst=target/src.name
   if dst.exists():
    idx=2
    while dst.with_name(src.stem+f' ({idx})'+src.suffix).exists():idx+=1
    dst=dst.with_name(src.stem+f' ({idx})'+src.suffix)
   if src.is_dir():
-   if any(p.is_symlink() for p in src.rglob('*')):raise ValueError('谱面文件夹不能包含符号链接')
+   if any(p.is_symlink() for p in src.rglob('*')):raise ValueError(tr('谱面文件夹不能包含符号链接'))
    shutil.copytree(src,dst)
   elif src.suffix.lower()=='.zip':shutil.copy2(src,dst)
-  else:raise ValueError('请拖入谱面 ZIP 或已解压的文件夹')
+  else:raise ValueError(tr('请拖入谱面 ZIP 或已解压的文件夹'))
  return scan(root)
 
 def run(cmd,timeout=60,**kwargs):
  p=subprocess.run([str(c) for c in cmd],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=timeout,**kwargs)
- if p.returncode:raise RuntimeError(p.stdout.strip()[-2400:] or '操作失败')
+ if p.returncode:raise RuntimeError(p.stdout.strip()[-2400:] or tr('操作失败'))
  return p.stdout
 
 def devicectl(args,timeout=45):
@@ -190,18 +191,18 @@ def devices():
 def preflight(device):
  if not device:
   ds=devices()
-  if len(ds)!=1:raise ValueError('请选择要更新的 Vision Pro')
+  if len(ds)!=1:raise ValueError(tr('请选择要更新的 Vision Pro'))
   device=ds[0]['id']
  try:
   data=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents'],25)
- except Exception as e:raise RuntimeError('无法连接现有自定义歌曲应用。请解锁头显并保持同一 Wi-Fi；确认此头显已安装之前配置的独立应用。\n'+str(e))
+ except Exception as e:raise RuntimeError(tr('无法连接现有自定义歌曲应用。请解锁头显并保持同一 Wi-Fi；确认此头显已安装之前配置的独立应用。\n')+str(e))
  names=[f['name'] for f in data.get('result',{}).get('files',[])]
- if 'beatsaber140' not in names or 'beatsaber-1.40.apk' not in names:raise ValueError('头显缺少首次运行所需的 1.40.8 程序数据。请先完成已有独立应用的初次安装。')
+ if 'beatsaber140' not in names or 'beatsaber-1.40.apk' not in names:raise ValueError(tr('头显缺少首次运行所需的 1.40.8 程序数据。请先完成已有独立应用的初次安装。'))
  return device
 
 def pack_keys():
  import zipfile
- if not SOURCE.is_file():raise ValueError('找不到 AVP Play 已下载的 Beat Saber 1.40.8 资源，请恢复该版本的本地下载。')
+ if not SOURCE.is_file():raise ValueError(tr('找不到 AVP Play 已下载的 Beat Saber 1.40.8 资源，请恢复该版本的本地下载。'))
  with zipfile.ZipFile(SOURCE) as z:keys=[Path(n).name.split('_pack_assets_all_')[0] for n in z.namelist() if '_pack_assets_all_' in n and '/debug_' not in n]
  return PRIORITY+[k for k in keys if k not in PRIORITY]
 
@@ -232,7 +233,7 @@ def check_build_space(groups,job):
  with zipfile.ZipFile(SOURCE) as z:base=sum(i.file_size for i in z.infolist() if not i.filename.startswith('assets/BeatmapLevelsData/'))
  needed=base+2*pcm+2*previews+768*1024**2
  free=shutil.disk_usage(SUPPORT).free
- if free<needed:raise ValueError(f'此次处理需要约 {needed/1024**3:.1f} GB 可用空间，目前剩余 {free/1024**3:.1f} GB。请释放空间后重试；头显曲库尚未修改。')
+ if free<needed:raise ValueError(tr('此次处理需要约 {0:.1f} GB 可用空间，目前剩余 {1:.1f} GB。请释放空间后重试；头显曲库尚未修改。').format(needed / 1024 ** 3, free / 1024 ** 3))
 
 def prune_build_cache(current):
  previous=read_json(SUPPORT/'latest-success.json',{}).get('resource')
@@ -247,29 +248,29 @@ def prune_build_cache(current):
 
 def library_signature(library):
  source=SOURCE.stat()
- groups=[g for g in library['playlists'] if g['songs']] or [{'name':library['playlists'][0]['name'] if library['playlists'] else '自定义歌曲','songs':[]}]
+ groups=[g for g in library['playlists'] if g['songs']] or [{'name':library['playlists'][0]['name'] if library['playlists'] else 'Custom Songs','songs':[]}]
  data={'source':[source.st_size,source.st_mtime_ns],'groups':[[g['name'],[[s['contentKey'],s['levelId']] for s in g['songs']]] for g in groups],'scripts':[hashlib.sha256((RES/n).read_bytes()).hexdigest() for n in ['build.py','convert.cjs']]}
  return hashlib.sha256(json.dumps(data,ensure_ascii=False).encode()).hexdigest()
 
 def build(root,job):
  library=scan(root)
- if library['errors']:raise ValueError('请先处理以下谱面问题：\n'+'\n'.join(library['errors']))
+ if library['errors']:raise ValueError(tr('请先处理以下谱面问题：\n')+'\n'.join(library['errors']))
  groups=[g for g in library['playlists'] if g['songs']]
- if not groups:groups=[{'name':library['playlists'][0]['name'] if library['playlists'] else '自定义歌曲','songs':[]}]
+ if not groups:groups=[{'name':library['playlists'][0]['name'] if library['playlists'] else 'Custom Songs','songs':[]}]
  keys=pack_keys();signature=library_signature(library);previous=read_json(SUPPORT/'latest.json',{})
  previous_job=Path(previous.get('job','/nonexistent'));previous_obb=previous_job/'main.1716.com.beatgames.beatsaber.obb'
  if previous.get('signature')==signature and previous_obb.is_file() and (previous_job/'verification.json').is_file():
-  note('曲库未改变，复用上次生成的曲库…');job.mkdir(parents=True,exist_ok=True)
+  note(tr('曲库未改变，复用上次生成的曲库…'));job.mkdir(parents=True,exist_ok=True)
   if job.resolve()!=previous_job.resolve():
    run(['/bin/cp','-c',previous_obb,job/previous_obb.name]);shutil.copy2(previous_job/'verification.json',job/'verification.json')
   return read_json(job/'verification.json')
  prune_build_cache(job);check_build_space(groups,job)
- if len(groups)>len(keys):raise ValueError(f'目前最多支持 {len(keys)} 个非空曲包文件夹')
+ if len(groups)>len(keys):raise ValueError(tr('目前最多支持 {0} 个非空曲包文件夹').format(len(keys)))
  cfg=[]
  for key,group in zip(keys,groups):
   for song in group['songs']:cfg.append({'folder':song['folder'],'infoPath':song['infoPath'],'slot':song['levelId'].lower(),'levelId':song['levelId'],'pack':key,'playlistName':group['name'],'contentKey':song['contentKey'],'label':song['title']+' ['+song['mapper']+']'})
  job.mkdir(parents=True,exist_ok=True);atomic(job/'config.json',cfg);atomic(job/'job.json',{'sourceObb':str(SOURCE),'cache':str(SUPPORT/'song-cache-v2'),'sourceStamp':[SOURCE.stat().st_size,SOURCE.stat().st_mtime_ns],'playlists':[{'pack':k,'name':g['name']} for k,g in zip(keys,groups)]})
- note('开始处理 '+str(library['uniqueSongs'])+' 份谱面、'+str(len(groups))+' 个曲包')
+ note(tr('开始处理 ')+str(library['uniqueSongs'])+tr(' 份谱面、')+str(len(groups))+tr(' 个曲包'))
  node=RES/'runtime/bin/node';node=node if node.exists() else Path(shutil.which('node') or '/nonexistent')
  try:
   stream([node,RES/'convert.cjs',job]);stream([sys.executable,RES/'build.py',job])
@@ -282,7 +283,7 @@ def send_resource(device,file):
 
 def sign_app(name,job):
  name=name.strip()
- if not name or len(name)>60:raise ValueError('应用名称请使用 1–60 个字符')
+ if not name or len(name)>60:raise ValueError(tr('应用名称请使用 1–60 个字符'))
  runtime=integration.prepare(ENVIRONMENT,SUPPORT,RES,TEAM,BUNDLE,note)
  target=job/'Klepton.app';shutil.rmtree(target,ignore_errors=True)
  run(['/usr/bin/ditto',runtime['app'],target])
@@ -297,13 +298,13 @@ def sign_app(name,job):
 
 def install(root,name,device):
  global DEVICE
- if not name.strip() or len(name.strip())>60:raise ValueError('应用名称请使用 1–60 个字符')
+ if not name.strip() or len(name.strip())>60:raise ValueError(tr('应用名称请使用 1–60 个字符'))
  if not device:
   ds=devices()
-  if len(ds)!=1:raise ValueError('请选择要安装的 Vision Pro')
+  if len(ds)!=1:raise ValueError(tr('请选择要安装的 Vision Pro'))
   device=ds[0]['id']
  DEVICE=device
- if not re.fullmatch(r'[A-Z0-9]{10}',TEAM):raise ValueError('请在安装设置中填写自己的 Apple 开发团队 ID')
+ if not re.fullmatch(r'[A-Z0-9]{10}',TEAM):raise ValueError(tr('请在安装设置中填写自己的 Apple 开发团队 ID'))
  job=SUPPORT/'builds'/(time.strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:6]);job.mkdir(parents=True)
  # Build and sign completely before installing or staging any data.
  report=build(root,job);app=sign_app(name,job)
@@ -320,18 +321,18 @@ def install(root,name,device):
   if any(f.get('name')=='PlayerData.dat' for f in listing.get('result',{}).get('files',[])):
    backup=SUPPORT/'backups'/job.name;backup.mkdir(parents=True,exist_ok=True)
    run(['/usr/bin/xcrun','devicectl','device','copy','from','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source','Documents/android-files/files/PlayerData.dat','--destination',backup/'PlayerData.dat','--timeout','45'],timeout=55)
- note('正在安装你自己的独立自定义歌曲应用…')
+ note(tr('正在安装你自己的独立自定义歌曲应用…'))
  run(['/usr/bin/xcrun','devicectl','device','install','app','--device',device,'--timeout','90',app],timeout=100)
  tree=Path(runtime['tree'])
  files=[(tree/'assets','Documents/beatsaber140/assets'),(tree/'apktool.yml','Documents/beatsaber140/apktool.yml'),(tree/'AndroidManifest.xml','Documents/beatsaber140/AndroidManifest.xml'),(Path(ENVIRONMENT['apk']),'Documents/beatsaber-1.40.apk')]
  for source,destination in files:
-  if not source.exists():raise ValueError('缺少首次安装文件：'+str(source))
-  note('正在传输首次运行文件：'+source.name)
+  if not source.exists():raise ValueError(tr('缺少首次安装文件：')+str(source))
+  note(tr('正在传输首次运行文件：')+source.name)
   run(['/usr/bin/xcrun','devicectl','device','copy','to','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source',source,'--destination',destination,'--timeout','900'],timeout=910)
- note('正在传输自定义曲库…');send_resource(device,job/integration.OBB_NAME)
+ note(tr('正在传输自定义曲库…'));send_resource(device,job/integration.OBB_NAME)
  listing=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents/android-files/obb'])
  remote=next(f for f in listing['result']['files'] if f['name']==integration.OBB_NAME)
- if remote['metadata']['size']!=report['resourceBytes']:raise RuntimeError('头显曲库资源大小不匹配，请点击首次安装/修复重试')
+ if remote['metadata']['size']!=report['resourceBytes']:raise RuntimeError(tr('头显曲库资源大小不匹配，请点击首次安装/修复重试'))
  atomic(SUPPORT/'latest-success.json',{'resource':str(job/integration.OBB_NAME),'bundle':BUNDLE,'name':name,'device':device,'signature':library_signature(scan(root)),'sha256':report['resourceSha256'],'resourceBytes':report['resourceBytes']})
  same=True
  if backup:
@@ -341,50 +342,50 @@ def install(root,name,device):
 
 def update(root,name,device,rename_only=False):
  global DEVICE
- if not name.strip() or len(name.strip())>60:raise ValueError('应用名称请使用 1–60 个字符')
- note('正在连接 Vision Pro，请保持头显解锁…');device=preflight(device);DEVICE=device
+ if not name.strip() or len(name.strip())>60:raise ValueError(tr('应用名称请使用 1–60 个字符'))
+ note(tr('正在连接 Vision Pro，请保持头显解锁…'));device=preflight(device);DEVICE=device
  signature=None
  if not rename_only:
   library=scan(root)
-  if library['errors']:raise ValueError('请先处理以下谱面问题：\n'+'\n'.join(library['errors']))
+  if library['errors']:raise ValueError(tr('请先处理以下谱面问题：\n')+'\n'.join(library['errors']))
   signature=library_signature(library);previous=read_json(SUPPORT/'latest-success.json',{})
   if previous.get('signature')==signature and previous.get('device')==device and previous.get('bundle')==BUNDLE:
    files=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents/android-files/obb'])
    remote=next((f for f in files.get('result',{}).get('files',[]) if f['name']=='main.1716.com.beatgames.beatsaber.obb'),{})
    if remote.get('metadata',{}).get('size')==previous.get('resourceBytes'):
     if previous.get('name')==name:
-     note('头显曲库已经是最新，无需重新处理或传输。');return {'noChanges':True,'scoresUnchanged':True,'launchSucceeded':True}
-    rename_only=True;note('曲库没有变化，仅更新应用名称…')
+     note(tr('头显曲库已经是最新，无需重新处理或传输。'));return {'noChanges':True,'scoresUnchanged':True,'launchSucceeded':True}
+    rename_only=True;note(tr('曲库没有变化，仅更新应用名称…'))
  job=SUPPORT/'builds'/time.strftime('%Y%m%d-%H%M%S');job.mkdir(parents=True,exist_ok=True)
  backup=SUPPORT/'backups'/job.name;backup.mkdir(parents=True,exist_ok=True)
- note('正在备份成绩…')
+ note(tr('正在备份成绩…'))
  run(['/usr/bin/xcrun','devicectl','device','copy','from','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source','Documents/android-files/files/PlayerData.dat','--destination',backup/'PlayerData.dat','--timeout','45'],timeout=55)
  report=None
  if not rename_only:report=build(root,job)
- note('正在准备应用名称和签名…');app=sign_app(name,job)
+ note(tr('正在准备应用名称和签名…'));app=sign_app(name,job)
  # All conversion and signature checks finish before any changes to the headset.
- note('正在更新头显应用名称…');run(['/usr/bin/xcrun','devicectl','device','install','app','--device',device,'--timeout','90',app],timeout=100)
+ note(tr('正在更新头显应用名称…'));run(['/usr/bin/xcrun','devicectl','device','install','app','--device',device,'--timeout','90',app],timeout=100)
  if not rename_only:
-  note('正在传输曲库，可能需要几分钟，请保持头显解锁…')
+  note(tr('正在传输曲库，可能需要几分钟，请保持头显解锁…'))
   try:send_resource(device,job/'main.1716.com.beatgames.beatsaber.obb')
   except Exception as e:
    previous=read_json(SUPPORT/'latest-success.json',{})
    previous_file=Path(previous.get('resource','/nonexistent'))
    if previous.get('bundle')==BUNDLE and previous_file.is_file():
     try:
-     note('本次传输未完成，正在恢复上次曲库…');send_resource(device,previous_file)
-     raise RuntimeError('本次更新未完成，已恢复上次曲库。请保持头显解锁后重试。\n'+str(e))
+     note(tr('本次传输未完成，正在恢复上次曲库…'));send_resource(device,previous_file)
+     raise RuntimeError(tr('本次更新未完成，已恢复上次曲库。请保持头显解锁后重试。\n')+str(e))
     except Exception as restore:
-     if '已恢复上次曲库' in str(restore):raise
-     raise RuntimeError('连接中断，恢复暂未完成。请解锁头显后重新更新曲库；本地上次曲库和成绩备份仍在。\n'+str(e))
+     if tr('已恢复上次曲库') in str(restore):raise
+     raise RuntimeError(tr('连接中断，恢复暂未完成。请解锁头显后重新更新曲库；本地上次曲库和成绩备份仍在。\n')+str(e))
    raise
   files=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents/android-files/obb'])
-  remote=next(f for f in files['result']['files'] if f['name']=='main.1716.com.beatgames.beatsaber.obb');assert remote['metadata']['size']==report['resourceBytes'],'头显资源大小不匹配'
+  remote=next(f for f in files['result']['files'] if f['name']=='main.1716.com.beatgames.beatsaber.obb');assert remote['metadata']['size']==report['resourceBytes'],tr('头显资源大小不匹配')
  run(['/usr/bin/xcrun','devicectl','device','copy','from','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source','Documents/android-files/files/PlayerData.dat','--destination',backup/'PlayerData-after.dat','--timeout','40'],timeout=50)
  same=(backup/'PlayerData.dat').read_bytes()==(backup/'PlayerData-after.dat').read_bytes()
  launch_ok=True
  try:
-  note('正在重新打开应用…');run(['/usr/bin/xcrun','devicectl','device','process','launch','--device',device,'--terminate-existing','--timeout','20',BUNDLE],timeout=30)
+  note(tr('正在重新打开应用…'));run(['/usr/bin/xcrun','devicectl','device','process','launch','--device',device,'--terminate-existing','--timeout','20',BUNDLE],timeout=30)
  except Exception:launch_ok=False
  result={'name':name,'device':device,'job':str(job),'backup':str(backup),'scoresUnchanged':same,'launchSucceeded':launch_ok,'report':report}
  atomic(job/'deployment.json',result)
@@ -411,10 +412,10 @@ def configure(arguments):
  return ENVIRONMENT
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('action',choices=['environment','configure','prepare','install','order','delete','restore','init','scan','import','create','devices','build','update','rename','preflight']);p.add_argument('--root',default=str(Path.home()/'Music/Beat Saber 曲库'));p.add_argument('--category',default='');p.add_argument('--name',default='SaberDock 自定义歌曲');p.add_argument('--device',default='');p.add_argument('--job');p.add_argument('--avp-root');p.add_argument('--avp-app');p.add_argument('--store');p.add_argument('--team');p.add_argument('paths',nargs='*');a=p.parse_intermixed_args();SUPPORT.mkdir(parents=True,exist_ok=True)
+ p=argparse.ArgumentParser();p.add_argument('action',choices=['environment','configure','prepare','install','order','delete','restore','init','scan','import','create','devices','build','update','rename','preflight']);p.add_argument('--root',default=str(Path.home()/'Music/SaberDock Library'));p.add_argument('--category',default='');p.add_argument('--name',default='SaberDock Custom Songs');p.add_argument('--device',default='');p.add_argument('--job');p.add_argument('--avp-root');p.add_argument('--avp-app');p.add_argument('--store');p.add_argument('--team');p.add_argument('paths',nargs='*');a=p.parse_intermixed_args();SUPPORT.mkdir(parents=True,exist_ok=True)
  lock=(SUPPORT/'job.lock').open('w')
  try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
- except BlockingIOError:raise ValueError('另一个曲库操作正在进行，请稍后重试')
+ except BlockingIOError:raise ValueError(tr('另一个曲库操作正在进行，请稍后重试'))
  environment=configure(a)
  if a.action in ['environment','configure']:result=environment
  elif a.action=='prepare':result=integration.prepare(environment,SUPPORT,RES,TEAM,BUNDLE,note)

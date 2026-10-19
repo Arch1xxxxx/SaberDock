@@ -1,3 +1,4 @@
+from i18n import tr
 import sys,json
 def main():
     from pathlib import Path
@@ -17,9 +18,9 @@ def main():
     def pcm_bytes(env,clip):
         r=clip['m_Resource'];raw=env.file.files[r['m_Source'].rsplit('/',1)[-1]].bytes;encoded=raw[r['m_Offset']:r['m_Offset']+r['m_Size']]
         magic,version,count,headers,names,size,mode=struct.unpack_from('<4s6I',encoded)
-        assert magic==b'FSB5' and version==1 and count==1 and headers==8 and mode==2,'FSB PCM 格式无效'
+        assert magic==b'FSB5' and version==1 and count==1 and headers==8 and mode==2,tr('FSB PCM 格式无效')
         sample=struct.unpack_from('<Q',encoded,60)[0];channels=((sample>>5)&1)+1;frames=sample>>34
-        assert frames*channels*2==size and len(encoded)==60+headers+names+size,'FSB 音频长度不一致'
+        assert frames*channels*2==size and len(encoded)==60+headers+names+size,tr('FSB 音频长度不一致')
         return encoded[60+headers+names:]
     
     def fsb(data,rate):
@@ -88,7 +89,7 @@ def main():
     for key in playlist_names:
         path=next(n for n in archive.namelist() if f'/{key}_pack_assets_all_' in n);env=UnityPy.load(archive.read(path));objs={o.path_id:o for o in env.objects}
         previews=[o for o in env.objects if o.type.name=='MonoBehaviour' and '_levelID' in o.read_typetree()]
-        assert previews,'曲包模板没有歌曲'
+        assert previews,tr('曲包模板没有歌曲')
         template=previews[0];pd=template.read_typetree();pack=next(o for o in env.objects if o.type.name=='MonoBehaviour' and '_packID' in o.read_typetree());packdata=pack.read_typetree()
         sprite=objs[packdata['_coverImage']['m_PathID']];sd=sprite.read_typetree();assert sprite.type.name=='Sprite' and sd['m_RD']['texture']['m_FileID']==0
         tex=objs[sd['m_RD']['texture']['m_PathID']]
@@ -102,20 +103,20 @@ def main():
         try:
             info=c['info'];folder=Path(c['folder']);state=packs[c['pack']];env=state['env'];level_id=c['levelId']
             def local(name):
-                path=(folder/name).resolve();assert path.is_relative_to(folder.resolve()),'歌曲文件路径越界';return path
+                path=(folder/name).resolve();assert path.is_relative_to(folder.resolve()),tr('歌曲文件路径越界');return path
             cache=cache_root/(c['contentKey']+'-'+level_id+'-'+cache_version);meta_path=cache/'meta.json';cache_hit=False
             path='assets/BeatmapLevelsData/'+c['slot']
             if meta_path.is_file():
                 try:
                     meta=json.loads(meta_path.read_text());cached_bundle=cache/'bundle'
-                    if cached_bundle.stat().st_size!=meta['patch']['bytes']:raise ValueError('缓存不完整')
+                    if cached_bundle.stat().st_size!=meta['patch']['bytes']:raise ValueError(tr('缓存不完整'))
                     audio=np.load(cache/'preview.npy',allow_pickle=False);rate=meta['rate'];n=meta['n'];duration=meta['duration'];gain=meta['gain'];peak_db=meta['peakDbFS'];cache_hit=True
                     dest=OUT/path;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(cached_bundle,dest);patch[path]=meta['patch'];built.add(path)
                 except (OSError,ValueError,KeyError):cache_hit=False;shutil.rmtree(cache,ignore_errors=True)
             if not cache_hit:
                 source_float,rate=sf.read(local(info['_songFilename']),dtype='float64',always_2d=True)
-                assert rate in [4000,8000,11000,11025,16000,22050,24000,32000,44100,48000,96000],'不支持的音频采样率'
-                assert source_float.shape[1] in [1,2] and np.isfinite(source_float).all() and len(source_float)>0,'音频必须为单声道或双声道'
+                assert rate in [4000,8000,11000,11025,16000,22050,24000,32000,44100,48000,96000],tr('不支持的音频采样率')
+                assert source_float.shape[1] in [1,2] and np.isfinite(source_float).all() and len(source_float)>0,tr('音频必须为单声道或双声道')
                 peak=float(np.abs(source_float).max());gain=min(1.,10**(-3/20)/max(peak,1e-12));audio=np.rint(source_float*gain*32767).astype('<i2');n,ch=audio.shape;duration=n/rate
                 assert np.abs(audio.astype('int32')).max()<32767
                 significant=np.abs(source_float*gain)>1/32767;assert np.array_equal(source_float[significant]>0,audio[significant]>0)
@@ -129,7 +130,7 @@ def main():
                     put_json(objects[item['_beatmapAsset']['m_PathID']],bm);put_json(light,ls,level_id+stat['name']+'.lightshow.gz');item['_lightshowAsset']=ptr(light);selected.append(item)
                 d['_difficultyBeatmapSets']=[{'_beatmapCharacteristicSerializedName':'Standard','_difficultyBeatmaps':selected}];model.save_typetree(d)
                 if c.get('nativeAudioData'):
-                    ad=c['nativeAudioData'];assert ad['songFrequency']==rate and ad['songSampleCount']==n,'原谱面 AudioData 与音频长度不匹配';timeline=ad['bpmData']
+                    ad=c['nativeAudioData'];assert ad['songFrequency']==rate and ad['songSampleCount']==n,tr('原谱面 AudioData 与音频长度不匹配');timeline=ad['bpmData']
                 else:
                     timeline=[];beat=0.;seconds=0.;bpm=info['_beatsPerMinute']
                     for event in c.get('bpmEvents') or []:
@@ -145,7 +146,7 @@ def main():
                 put_audio(songenv,objects[d['_audioClip']['m_PathID']],audio,rate);checked=write_bundle(songenv,path);co={o.path_id:o for o in checked.objects}
                 for item,stat in zip(selected,c['difficulties']):
                     bm=json.loads(gzip.decompress(co[item['_beatmapAsset']['m_PathID']].read_typetree()['m_Script'].encode('utf-8','surrogateescape')));assert len(bm['colorNotes'])==stat['notes'] and len(bm['bombNotes'])==stat['bombs'] and len(bm['obstacles'])==stat['obstacles']
-                assert pcm_bytes(checked,co[d['_audioClip']['m_PathID']].read_typetree())==audio.tobytes(),'整曲音频校验失败';built.add(path)
+                assert pcm_bytes(checked,co[d['_audioClip']['m_PathID']].read_typetree())==audio.tobytes(),tr('整曲音频校验失败');built.add(path)
                 peak_db=float(20*np.log10(max(float(np.abs(audio.astype('float64')).max())/32768,1e-12)))
             tag=c['pack']+':'+level_id
             preview=clone(state['template'],tag+':preview');clip=clone(state['audio'],tag+':audio');sprite=clone(state['sprite'],tag+':sprite');texture=clone(state['texture'],tag+':texture');state['clones'] += [preview,clip,sprite,texture]
@@ -160,14 +161,14 @@ def main():
                 if any(k in cd for k in ['_colorLeft','_colorRight','_obstacleColor','_envColorLeft']):v['_beatmapColorSchemeIdx']=len(pd['_colorSchemes']);pd['_colorSchemes'].append(color_scheme(cd,'Custom-'+level_id+stat['name']))
                 diffs.append(v)
             template['_previewDifficultyBeatmaps']=diffs;pd['_previewDifficultyBeatmapSets']=[template];preview.save_typetree(pd);state['levels'].append(preview)
-            report['songs'].append({'label':c['label'],'id':level_id,'playlist':c['playlistName'],'difficulties':c['difficulties'],'gainDb':float(20*np.log10(gain)),'peakDbFS':peak_db,'cached':cache_hit,'warnings':(['环境 '+wanted+' 不可用，已使用默认环境'] if scene!=wanted else []),'optionalSuggestions':c['optionalSuggestions']})
+            report['songs'].append({'label':c['label'],'id':level_id,'playlist':c['playlistName'],'difficulties':c['difficulties'],'gainDb':float(20*np.log10(gain)),'peakDbFS':peak_db,'cached':cache_hit,'warnings':([tr('环境 ')+wanted+tr(' 不可用，已使用默认环境')] if scene!=wanted else []),'optionalSuggestions':c['optionalSuggestions']})
             if not cache_hit:
                 tmp=cache.with_name(cache.name+'.new');shutil.rmtree(tmp,ignore_errors=True);tmp.mkdir(parents=True,exist_ok=True)
                 shutil.copyfile(OUT/path,tmp/'bundle');np.save(tmp/'preview.npy',audio[p0:p1],allow_pickle=False)
                 (tmp/'meta.json').write_text(json.dumps({'rate':rate,'n':n,'duration':duration,'gain':gain,'peakDbFS':peak_db,'patch':patch[path]}))
                 shutil.rmtree(cache,ignore_errors=True);tmp.replace(cache)
-            progress(('复用已处理歌曲：' if cache_hit else '音频、封面和配色：')+c['label'])
-        except Exception as e:raise RuntimeError(c['label']+'：'+(str(e) or '歌曲资源校验失败')) from e
+            progress((tr('复用已处理歌曲：') if cache_hit else tr('音频、封面和配色：'))+c['label'])
+        except Exception as e:raise RuntimeError(c['label']+'：'+(str(e) or tr('歌曲资源校验失败'))) from e
     for key,state in packs.items():
         env=state['env'];refs=[ptr(o) for o in state['levels']];allrefs=[ptr(o) for o in state['clones']]
         for o in list(env.objects):
@@ -187,8 +188,8 @@ def main():
                 o.save_typetree(d)
         checked=write_bundle(env,state['path']);co={o.path_id:o for o in checked.objects}
         for ident,expected_hash,label in state['audio_checks']:
-            assert hashlib.sha256(pcm_bytes(checked,co[ident].read_typetree())).hexdigest()==expected_hash,label+'：试听音频校验失败'
-        for ident,expected,label in state['covers']:assert co[ident].read().image.convert('RGBA').tobytes()==expected.tobytes(),label+'：封面回读不一致'
+            assert hashlib.sha256(pcm_bytes(checked,co[ident].read_typetree())).hexdigest()==expected_hash,label+tr('：试听音频校验失败')
+        for ident,expected,label in state['covers']:assert co[ident].read().image.convert('RGBA').tobytes()==expected.tobytes(),label+tr('：封面回读不一致')
         assert next(o.read_typetree() for o in checked.objects if o.type.name=='MonoBehaviour' and '_beatmapLevels' in o.read_typetree())['_beatmapLevels']==refs
     
     catalog=json.loads(archive.read('assets/aa/catalog.json'));entries=bytearray(base64.b64decode(catalog['m_EntryDataString']));extra=bytearray(base64.b64decode(catalog['m_ExtraDataString']));rows=struct.unpack_from('<I',entries)[0]
@@ -218,7 +219,7 @@ def main():
         new+=struct.pack('<2i',off,len(locs))+(struct.pack(f'<{len(locs)}i',*locs) if locs else b'')
     assert pack_rows and pos==len(buckets);catalog['m_BucketDataString']=base64.b64encode(new).decode();cat=json.dumps(catalog,separators=(',',':')).encode();(OUT/'assets/aa/catalog.json').write_bytes(cat);patch['assets/aa/catalog.json']={'patchedSha256':hashlib.sha256(cat).hexdigest(),'bytes':len(cat)}
     report.update(patches=patch,playlists=[{'name':s['name'],'songs':len(s['levels'])} for s in packs.values()],checks=['core beatmap round-trip','FSB PCM byte comparison','audio peaks below -3 dBFS','cover pixels after serialization','unique bundle names per song','addressable CRC and pack count','original playable songs removed'])
-    progress('正在生成头显曲库文件…')
+    progress(tr('正在生成头显曲库文件…'))
     out=BASE/'main.1716.com.beatgames.beatsaber.obb'
     with zipfile.ZipFile(out,'w',allowZip64=True) as z:
         for info in archive.infolist():
@@ -231,11 +232,11 @@ def main():
         assert z.testzip() is None
         for path,v in patch.items():
             label=next((c['label'] for c in configs if path=='assets/BeatmapLevelsData/'+c['slot']),path)
-            assert hashlib.sha256(z.read(path)).hexdigest()==v['patchedSha256'],label+'：资源完整性校验失败，请重试'
-    report['resourceBytes']=out.stat().st_size;report['resourceSha256']=hashlib.sha256(out.read_bytes()).hexdigest();(BASE/'verification.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));progress('曲库生成并校验完成')
+            assert hashlib.sha256(z.read(path)).hexdigest()==v['patchedSha256'],label+tr('：资源完整性校验失败，请重试')
+    report['resourceBytes']=out.stat().st_size;report['resourceSha256']=hashlib.sha256(out.read_bytes()).hexdigest();(BASE/'verification.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));progress(tr('曲库生成并校验完成'))
 
 if __name__=='__main__':
     try:main()
     except Exception as error:
-        print(json.dumps({'event':'error','message':'曲库处理未完成：'+(str(error) or '资源结构校验失败')},ensure_ascii=False),flush=True)
+        print(json.dumps({'event':'error','message':tr('曲库处理未完成：')+(str(error) or tr('资源结构校验失败'))},ensure_ascii=False),flush=True)
         sys.exit(1)

@@ -1,45 +1,53 @@
+[English](#saberdock) · [简体中文](#saberdock-1)
+
 # SaberDock
 
-**为 Apple Vision Pro 安装和管理 Beat Saber 自定义曲库的 Mac 应用。**
+A Mac app for organizing custom Beat Saber maps and updating a separate custom-content app on Apple Vision Pro using your local AVP Play installation.
 
-复用你本机 **AVP Play 已下载的 Beat Saber 1.40.8**，以你自己的 Apple 开发签名生成独立应用。把谱面拖进文件夹，每个文件夹就是一个曲包，再一键更新到头显。
+**SaberDock does not include or distribute any game, APK, OBB, paid music pack, or game-derived runtime. It is a companion tool for playing custom content for games you already own on devices you already own. You must provide your own game files through your own AVP Play installation.**
 
-> 首个公开预览版。当前仅支持 Beat Saber **1.40.8 / versionCode 1716**，不支持 1.45。运行库独立构建、首次签名和安装流程仍需要更多不同账户、工具链和设备的实测。
+## What you can do
 
-## 功能
+- Drag map ZIP files or extracted map folders into a library. Each subfolder becomes a headset playlist.
+- Keep supported map covers, saber/block colors, and Standard two-saber difficulties.
+- Remove and restore songs, reorder them, or sort by title, artist, or mapper.
+- Process only new or changed maps, then update the headset with one button.
+- Choose the headset app name and use your own Apple development account for signing.
+- Use the interface in English (default) or Simplified Chinese, selected from the toolbar.
 
-- 自动识别 AVP Play 的本地下载与外置硬盘位置，也可手动选择。
-- 核对 APK 与资源版本；当前 AVP Play 构建属于其他版本时，在独立目录重新准备 1.40.8。
-- 首次安装／修复独立头显应用，使用你自己的 Apple 开发团队；不替换 AVP Play 安装的原版游戏。
-- ZIP 与已解压谱面导入；文件夹生成曲包；封面、作者方块配色和 Standard 双剑难度保留。
-- 应用内删除、恢复和排序；按歌名、歌手或谱师排序。
-- 首次建立处理缓存，之后只重新转换新增／修改的歌曲。曲库不变时跳过重复同步。
-- 防破音处理；歌曲相关错误包含歌名和谱师；更新前备份成绩。
+When the library changes, syncing transfers the complete generated library resource. Previously processed songs are reused; an unchanged library skips repeat processing and transfer.
 
-曲库有变化时，仍需向头显传输完整 OBB 资源文件；缓存优化的是歌曲转换、校验和无变化时的同步。
+## Requirements
 
-## 使用前准备
+- An Apple Silicon Mac running macOS 14 or later.
+- [AVP Play](https://github.com/myMartek/avp-play), its local toolchain, and your own complete **Beat Saber 1.40.8 / version code 1716** download (APK and OBB). Other versions, including 1.45, are not supported.
+- Xcode with a visionOS SDK compatible with your AVP Play toolchain, signed in to your own Apple development account. Complete an AVP Play installation first.
+- Your Apple Vision Pro paired with Xcode, with Developer Mode enabled, unlocked, and connected to the same network as the Mac.
+- Free space for local processing and the generated library.
 
-- Apple Silicon Mac，macOS 14 或更新版本。
-- [AVP Play](https://github.com/myMartek/avp-play)，以及你通过自己账户下载的 Beat Saber **1.40.8（1716）APK + OBB**。已有 1.45 下载不会自动替代 1.40.8。
-- 已登录自己的 Apple 开发账户的 Xcode，已安装 visionOS SDK。请使用与你的 AVP Play 工具链兼容的 Xcode。
-- Vision Pro 已与 Xcode 配对、开启开发者模式、解锁，并与 Mac 在同一网络。
-- 本机 AVP Play 已准备好 Klepton 工具链。首次独立准备可能需要数 GB 空间和数分钟构建时间。
+A Quest headset is not required. SaberDock does not sign in to Meta, download games, unlock purchases, or obtain game files from third-party sources.
 
-**不需要 Quest 头显。SaberDock 不登录 Meta，也不下载、分享或解锁游戏及付费曲包。**
+## Install on your Mac
 
-## 安装与首次使用
+1. Download the Apple Silicon `.dmg` from [Releases](https://github.com/Arch1xxxxx/SaberDock/releases).
+2. Open it and drag **SaberDock** to the **Applications** shortcut.
+3. Open SaberDock from Applications, then eject the disk image. Search for **SaberDock** in the macOS app library or Spotlight to open it later.
 
-1. 从 [Releases](https://github.com/Arch1xxxxx/SaberDock/releases) 下载 `SaberDock-…-macOS-arm64.dmg`，打开后将 SaberDock 拖到旁边的“Applications（应用程序）”文件夹，再从“应用程序”打开一次。之后可在 macOS 应用库及 Spotlight 中搜索 `SaberDock` 或 `SaberDock 曲库`。也保留 ZIP 下载。预览包使用本地签名，尚未取得 Apple Developer ID 公证；首次打开时按 macOS 的“隐私与安全性”提示允许即可。
-2. 打开“安装设置”。应用会检查 AVP Play 应用、数据、下载目录和最近使用的开发团队 ID；确认它们属于你自己的账户。
-3. 选择曲库目录。默认是 `音乐/Beat Saber 曲库`。每个子文件夹对应一个曲包，放入 ZIP 或解压谱面即可。
-4. 保持头显解锁，选择设备，点击“首次安装／修复”。谱面转换、资源校验和签名完成后才开始安装与传输。
-5. 在头显手动打开独立的自定义歌曲应用。以后只需点击“一键更新头显”；改名可用“仅改名称”。
+The app is locally signed and is not notarized by Apple. If macOS blocks the first launch, use the app-specific Open Anyway option in System Settings → Privacy & Security. A ZIP download is also available.
 
-如果只检测到 1.45，请回到 AVP Play，确认自己的本地曲库中确实有 1.40.8 下载。SaberDock 不会从其他来源获取游戏。
+## Set up and install on your headset
+
+1. Open **Installation Settings**. Check the detected AVP Play app, data folder, downloads folder, and your Apple Team ID. You can choose paths manually. The team ID is also available in Xcode → Settings → Accounts.
+2. Add maps to your library. The default location is `~/Music/SaberDock Library`; the default headset app name is **SaberDock Custom Songs**. These defaults stay in English regardless of interface language. Existing library locations and custom names are retained.
+3. Keep the headset unlocked, select your Vision Pro, and click **Install / Repair**. SaberDock prepares and signs the separate app locally, then installs the app and required data on your headset.
+4. Open **SaberDock Custom Songs**, or the name you chose, on the headset.
+
+SaberDock uses your local game files and your own signing account. The original AVP Play game installation remains separate. Signing validity and device access depend on your Apple development account.
+
+## Organize your library
 
 ```text
-音乐/Beat Saber 曲库/
+~/Music/SaberDock Library/
 ├── Vol.1 - K-pop/
 │   ├── song-one.zip
 │   └── song-two/
@@ -47,55 +55,143 @@
     └── song-three.zip
 ```
 
-## 歌曲管理
+Each immediate subfolder is a playlist. Drop maps into a playlist folder in Finder, drag them into the app, or use **Import Maps**. Dropping a category folder creates a playlist with that folder's name. Use **New Playlist** to create another folder.
 
-- 歌曲旁的文件夹按钮打开源谱面；ZIP 会打开所在目录并选中原文件。
-- 垃圾桶按钮只从当前曲包移除。顶部恢复按钮可连续恢复最近删除。
-- 单独的谱面目录／单曲 ZIP 移到曲库中隐藏的 `.曲库回收站`；多曲 ZIP 保留原文件，只排除选中歌曲。
-- 上下箭头、拖动或“排序”菜单保存当前顺序，新增歌曲追加在末尾。头显游戏请选择曲包的默认顺序。
-- 删除和排序在下一次同步时应用到头显。连同 `.beatsaber-library.json` 备份整个曲库即可保存管理记录。
+- The folder button beside a song opens its source in Finder; ZIP files are selected in their containing folder.
+- The trash button removes a song from the selected playlist. The restore button undoes the most recent deletion. Copies in other playlists are kept.
+- Removed single-map sources are stored in the hidden `.library-trash` folder. Multi-map ZIPs stay intact; the selected song is excluded from that playlist.
+- Use the arrows, drag to reorder, or choose a **Sort** option. Select the playlist's default order in the headset game.
+- Click **Update Headset** to apply additions, deletions, and ordering. Use **Rename Only** to change the headset app name without transferring the library.
+- **Build Library Only** prepares and verifies the library on the Mac without syncing.
 
-## 兼容范围
+Map errors identify the affected song. Resolve or remove unsupported maps before updating. Back up your whole library, including `.beatsaber-library.json`, to retain playlists and management records.
 
-| 项目 | 当前状态 |
-| --- | --- |
-| Beat Saber 1.40.8 / 1716 | 支持的资源版本 |
-| Beat Saber 1.45 等其他版本 | 拒绝混用，需要单独适配 |
-| 标准双剑谱面 | 支持多个 Standard 难度；转换后校验 |
-| Chroma、Noodle Extensions、Mapping Extensions 等必需插件 | 不支持，报出歌名并阻止同步 |
-| 原谱面封面、方块配色 | 保留 |
-| 音频偏移、Shuffle、各难度不同变速时间轴 | 暂不支持，会显示具体歌曲错误 |
-| 删空曲库 | 可生成不含歌曲的自定义曲包；头显体验待更多实测 |
-| Apple 开发签名 | 使用本机账户生成；有效期与能力取决于你的 Apple 开发账户 |
+## Supported maps
 
-## 本地数据
+Standard two-saber maps are supported. Required Quest mods such as Chroma, Noodle Extensions, and Mapping Extensions are not supported. Optional mod effects are omitted. Audio offsets, Shuffle, and different BPM timelines between difficulties are not supported. The app checks maps before transfer and reports incompatible songs.
 
-SaberDock 只读取 AVP Play 的相关下载、安装记录和工具链，不读取其 Meta 登录凭据。临时 APK 解包、翻译代码、曲库资源、签名资料、处理缓存和成绩备份仅存于本机：
+## Local data and privacy
+
+Library files remain where you choose. Processing caches, locally generated headset apps, provisioning data, and score backups are stored on your Mac in:
 
 ```text
 ~/Library/Application Support/SaberDock/
 ```
 
-应用包和 GitHub 仓库不包含游戏 APK/OBB、游戏译码库、歌曲、封面、Apple 证书或描述文件。请勿把本机 Application Support 或生成的头显应用提交到仓库。
+SaberDock reads AVP Play's relevant local downloads, installation records, and toolchain; it does not read Meta login credentials. Do not upload generated headset apps, game files, signing credentials, or your Application Support folder to this repository.
 
-## 从源码构建
+## Build from source
 
-需要 Apple Silicon Mac、Xcode，以及可启动构建脚本的 Python 3。脚本会下载固定版本且核对 SHA-256 的便携 Python 和 Node，安装锁定依赖，构建独立 Mac 应用；成品不依赖开发机路径，也不需要用户另装 Python／Node。
+On an Apple Silicon Mac with Xcode and Python 3:
 
 ```sh
 python3 -m unittest discover -s tests -v
 python3 scripts/build_app.py
-open dist/
 ```
 
-结果在 `dist/`，包括 ZIP 和 SHA256SUMS；解压 ZIP 后打开应用。`scripts/audit_release.py` 检查游戏资源、个人描述文件等是否误入发布包。
+The build downloads checksum-pinned portable Python and Node runtimes and locked dependencies. The resulting Mac app does not require a separate Python or Node installation. DMG, ZIP, and SHA-256 checksums are written to `dist/`. The package audit excludes game content and personal signing materials.
 
-GitHub Actions 会验证源码、构建 Mac 包并提供构建产物。推送到 main 后生成与该提交绑定的私测预览 Release，推送 `v…` 标签生成相应版本的预发布 Release；CI 不需要也不接收游戏文件或 Apple 签名凭据。仓库保持私有时，下载仅对有权限的协作者开放。
+## Ownership, trademarks, and license
 
-## 致谢与许可
+SaberDock is an independent community tool and is not affiliated with, endorsed by, or sponsored by Meta, Beat Games, Apple, AVP Play, or Klepton. **All trademarks, product names, logos, and other marks mentioned belong to their respective owners.** The names identify compatible products and dependencies; no ownership of those marks is claimed.
 
-感谢 [AVP Play](https://github.com/myMartek/avp-play)、[Klepton](https://github.com/shinyquagsire23/Klepton)、UnityPy 和 bsmap。SaberDock 是独立社区工具，与 Meta、Beat Games、Apple 及上述项目没有隶属关系。
+The source is licensed under the [MIT License](LICENSE). See [third-party notices](THIRD-PARTY.md) for dependency licenses. Thanks to [AVP Play](https://github.com/myMartek/avp-play), [Klepton](https://github.com/shinyquagsire23/Klepton), UnityPy, and bsmap.
 
-SaberDock 源码采用 [MIT License](LICENSE)。依赖及其许可见 [THIRD-PARTY.md](THIRD-PARTY.md)。不会分发 FMOD SDK／运行库，音频使用自行生成并校验的未压缩 PCM。
+---
 
-English overview: [docs/README.en.md](docs/README.en.md).
+# SaberDock
+
+用于在 Mac 上管理 Beat Saber 自定义谱面，并借助本机 AVP Play 为 Apple Vision Pro 安装和更新独立自定义内容应用。
+
+**SaberDock 不包含、也不分发任何游戏、APK、OBB、付费曲包或由游戏生成的运行文件。本软件只是辅助工具，让你在已有的设备上游玩已拥有游戏的自定义内容。你需要通过自己的 AVP Play 安装提供自己拥有的游戏文件。**
+
+## 可以做什么
+
+- 拖入谱面 ZIP 或已解压的谱面文件夹，每个子文件夹对应头显中的一个曲包。
+- 保留受支持谱面的封面、光剑／方块配色与 Standard 标准双剑难度。
+- 删除、恢复和排列歌曲，或按歌名、歌手、谱师排序。
+- 只重新处理新增或改动的谱面，一键更新头显曲库。
+- 自定义头显应用名称，使用自己的 Apple 开发账户签名。
+- 默认使用英文界面，可在工具栏切换为简体中文。
+
+曲库变化后，同步仍会传输完整的曲库资源文件；已处理的歌曲会复用缓存，曲库未变化时跳过重复处理和传输。
+
+## 使用前准备
+
+- Apple Silicon Mac，macOS 14 或更新版本。
+- [AVP Play](https://github.com/myMartek/avp-play)、本机工具链，以及通过自己账户完整下载的 **Beat Saber 1.40.8 / versionCode 1716**（APK 与 OBB）。不支持 1.45 等其他版本。
+- 已登录自己 Apple 开发账户的 Xcode，及与 AVP Play 工具链兼容的 visionOS SDK。请先通过 AVP Play 完成一次安装。
+- 你自己的 Apple Vision Pro，已与 Xcode 配对并开启开发者模式，保持解锁，与 Mac 连接同一网络。
+- 足够的本机空间，用于歌曲处理与生成曲库。
+
+不需要 Quest 头显。SaberDock 不登录 Meta、不下载游戏、不解锁付费内容，也不从其他来源获取游戏文件。
+
+## 在 Mac 上安装
+
+1. 从 [Releases](https://github.com/Arch1xxxxx/SaberDock/releases) 下载 Apple Silicon 版 `.dmg`。
+2. 打开后，将 **SaberDock** 拖到旁边的 **Applications（应用程序）** 快捷方式。
+3. 从“应用程序”打开 SaberDock，然后推出磁盘映像。以后可在 macOS 应用库或 Spotlight 搜索 **SaberDock**。
+
+应用使用本地签名，尚未经过 Apple 公证。如果 macOS 阻止首次启动，可在“系统设置 → 隐私与安全性”中使用针对此应用的“仍要打开”。也提供 ZIP 下载。
+
+## 设置并安装到头显
+
+1. 打开 **Installation Settings（安装设置）**，核对自动检测的 AVP Play 应用、数据目录、下载目录和你自己的 Apple 团队 ID，也可手动选择。团队 ID 还可在 Xcode → Settings → Accounts 中查看。
+2. 添加谱面。默认曲库位置为 `~/Music/SaberDock Library`，默认头显应用名称为 **SaberDock Custom Songs**。无论界面选择哪种语言，这两个默认值都使用英文。已有曲库位置和自定义名称会保留。
+3. 保持头显解锁，选择你的 Vision Pro，点击 **Install / Repair（首次安装 / 修复）**。SaberDock 在本机准备并签名独立应用，再安装应用并传输必要数据。
+4. 在头显打开 **SaberDock Custom Songs**，或你自行设置的名称。
+
+SaberDock 使用你的本地游戏文件和自己的签名账户，与 AVP Play 原版游戏安装相互独立。签名有效期及设备能力取决于你的 Apple 开发账户。
+
+## 管理曲库
+
+```text
+~/Music/SaberDock Library/
+├── Vol.1 - K-pop/
+│   ├── song-one.zip
+│   └── song-two/
+└── Vol.2 - Japan/
+    └── song-three.zip
+```
+
+曲库根目录下的每个直接子文件夹对应一个曲包。可以在访达中将谱面放入曲包文件夹、直接拖入应用，或使用 **Import Maps（导入谱面）**。拖入整份分类文件夹会建立同名曲包；使用 **New Playlist（新建曲包）** 可添加文件夹。
+
+- 歌曲旁的文件夹按钮打开源谱面；ZIP 会在所在文件夹中被选中。
+- 垃圾桶按钮从当前曲包移除歌曲，恢复按钮撤销最近一次删除；其他曲包中的副本会保留。
+- 已删除的单曲源文件保存在隐藏的 `.library-trash` 文件夹。多曲 ZIP 保留原文件，只从当前曲包排除选中的歌曲。
+- 使用上下箭头、拖动或 **Sort（排序）** 菜单排列歌曲。头显内请使用曲包默认顺序。
+- 点击 **Update Headset（一键更新头显）** 应用新增、删除和排序；**Rename Only（仅改名称）** 无需传输曲库即可更改头显应用名。
+- **Build Library Only（仅生成曲库）** 只在 Mac 上生成并校验曲库。
+
+歌曲错误会标出对应歌名。请先处理或移除不兼容谱面再更新。备份整个曲库及其中的 `.beatsaber-library.json`，即可保留曲包和管理记录。
+
+## 谱面兼容范围
+
+支持 Standard 标准双剑谱面。不支持必须依赖 Chroma、Noodle Extensions、Mapping Extensions 等 Quest 插件的谱面；可选插件效果不会导入。不支持音频偏移、Shuffle 或各难度采用不同 BPM 时间轴的谱面。应用会在传输前检查并提示不兼容的歌曲。
+
+## 本地数据与隐私
+
+谱面保留在你选择的曲库位置。处理缓存、本机生成的头显应用、签名资料和成绩备份保存在：
+
+```text
+~/Library/Application Support/SaberDock/
+```
+
+SaberDock 读取 AVP Play 相关的本地下载、安装记录和工具链，不读取 Meta 登录凭据。请勿将生成的头显应用、游戏文件、签名凭据或 Application Support 文件夹上传到本仓库。
+
+## 从源码构建
+
+在已安装 Xcode 与 Python 3 的 Apple Silicon Mac 上运行：
+
+```sh
+python3 -m unittest discover -s tests -v
+python3 scripts/build_app.py
+```
+
+构建会下载固定版本并核对校验和的便携 Python、Node 和锁定依赖。生成的 Mac 应用无需另装 Python 或 Node。DMG、ZIP 和 SHA-256 校验文件位于 `dist/`；发布包检查会排除游戏内容和个人签名资料。
+
+## 所有权、商标与许可
+
+SaberDock 是独立社区工具，与 Meta、Beat Games、Apple、AVP Play、Klepton 没有隶属、认可或赞助关系。**文中提及的所有商标、产品名称、标志及其他标识均属于其各自的原所有人。** 使用这些名称仅为说明兼容产品和依赖，不主张拥有相关商标。
+
+源码采用 [MIT License](LICENSE)。依赖许可见 [第三方说明](THIRD-PARTY.md)。感谢 [AVP Play](https://github.com/myMartek/avp-play)、[Klepton](https://github.com/shinyquagsire23/Klepton)、UnityPy 和 bsmap。

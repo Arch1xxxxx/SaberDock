@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+
+- English is the default interface, with a persistent Simplified Chinese language option.
+- Use English default app names and library paths, with bilingual first-use guides and ownership notices.
+
 ## 0.1.2
 
 - Publish a read-only DMG with the SaberDock app and an Applications shortcut for drag-to-install. Keep the ZIP alternative and include both checksums.

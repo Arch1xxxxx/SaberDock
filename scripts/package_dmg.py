@@ -19,13 +19,13 @@ def main():
         run('/usr/bin/xattr', '-cr', staging / app.name)
         run('/usr/bin/codesign', '--verify', '--deep', '--strict', staging / app.name)
         (staging / 'Applications').symlink_to('/Applications')
-        (staging / '安装说明 - Install.txt').write_text(
-            '将 SaberDock 拖到 Applications（应用程序）文件夹，然后从应用程序打开一次。\n'
-            '之后可在 macOS 应用库及 Spotlight 搜索 SaberDock 或 SaberDock 曲库。\n'
-            '安装完成后可推出此磁盘映像。不要在磁盘映像内长期运行应用。\n\n'
+        (staging / 'Install - 安装说明.txt').write_text(
             'Drag SaberDock into Applications, then launch it from Applications once.\n'
-            'You can then find it in the macOS app library and Spotlight. Eject this image after installation.\n',
-            encoding='utf-8')
+            'Search for SaberDock in the macOS app library or Spotlight. Eject this image after installation.\n'
+            'The interface defaults to English. Choose English or 简体中文 in the toolbar.\n\n'
+            '将 SaberDock 拖到 Applications（应用程序）文件夹，再从应用程序打开一次。\n'
+            '之后可在 macOS 应用库及 Spotlight 搜索 SaberDock，安装后可推出此磁盘映像。\n'
+            '默认使用英文界面，可在工具栏切换为简体中文。\n', encoding='utf-8')
         run('/usr/bin/hdiutil', 'create', '-ov', '-volname', 'SaberDock', '-srcfolder', staging,
             '-format', 'UDZO', '-fs', 'APFS', image)
     run('/usr/bin/hdiutil', 'verify', image)

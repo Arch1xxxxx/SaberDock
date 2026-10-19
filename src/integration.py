@@ -1,3 +1,4 @@
+from i18n import tr
 """Read AVP Play's local library and prepare an isolated, version-matched runtime."""
 import hashlib,json,os,plistlib,re,shutil,subprocess,time,zipfile
 from pathlib import Path
@@ -47,22 +48,22 @@ def discover(base=None,app=None,store=None):
    except (OSError,ValueError):continue
   if matched:break
  issues=[]
- if not app:issues.append('找不到 AVP Play.app，请先安装 AVP Play 或手动选择其应用文件。')
- if not apk.is_file() or not obb.is_file():issues.append('未找到 Beat Saber 1.40.8（1716）的完整下载。请先在 AVP Play 下载该版本；当前通用版暂不支持 1.45。')
- if not toolchains:issues.append('找不到 AVP Play 工具链，请先用 AVP Play 完成一次游戏安装。')
+ if not app:issues.append(tr('找不到 AVP Play.app，请先安装 AVP Play 或手动选择其应用文件。'))
+ if not apk.is_file() or not obb.is_file():issues.append(tr('未找到 Beat Saber 1.40.8（1716）的完整下载。请先在 AVP Play 下载该版本；当前通用版暂不支持 1.45。'))
+ if not toolchains:issues.append(tr('找不到 AVP Play 工具链，请先用 AVP Play 完成一次游戏安装。'))
  return {'avpRoot':str(base),'avpApp':str(app) if app else '', 'store':str(store),'apk':str(apk),'sourceObb':str(obb),'toolchains':toolchains,'matched':matched,'team':team,'ready':not issues,'issues':issues,'version':'1.40.8 (1716)'}
 
 def validate_source(environment):
  if not environment['ready']:raise ValueError('\n'.join(environment['issues']))
  with zipfile.ZipFile(environment['apk']) as z:
-  if 'AndroidManifest.xml' not in z.namelist() or 'lib/arm64-v8a/libil2cpp.so' not in z.namelist():raise ValueError('AVP Play 中的 APK 不完整或不是 ARM64 Beat Saber。')
+  if 'AndroidManifest.xml' not in z.namelist() or 'lib/arm64-v8a/libil2cpp.so' not in z.namelist():raise ValueError(tr('AVP Play 中的 APK 不完整或不是 ARM64 Beat Saber。'))
  with zipfile.ZipFile(environment['sourceObb']) as z:
   required=['assets/BeatmapLevelsData/fitbeat','assets/aa/catalog.json']
-  if any(p not in z.namelist() for p in required):raise ValueError('下载资源缺少 1.40.8 曲库模板，请在 AVP Play 中修复该版本下载。')
+  if any(p not in z.namelist() for p in required):raise ValueError(tr('下载资源缺少 1.40.8 曲库模板，请在 AVP Play 中修复该版本下载。'))
 
 def command(argv,*,cwd=None,env=None,timeout=900):
  result=subprocess.run([str(x) for x in argv],cwd=cwd,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=timeout)
- if result.returncode:raise RuntimeError(result.stdout.strip()[-4000:] or '操作失败')
+ if result.returncode:raise RuntimeError(result.stdout.strip()[-4000:] or tr('操作失败'))
  return result.stdout
 
 def prepare(environment,support,resources,team,bundle,note,*,build_app=True):
@@ -77,16 +78,16 @@ def prepare(environment,support,resources,team,bundle,note,*,build_app=True):
  recipe={'schema':1,'id':'beatsaber140','title':'Beat Saber','package':'com.beatgames.beatsaber','versionName':'1.40.8','versionCode':1716,'store':{},'toolchain':{'target':'beatsaber140','minCommit':''},'files':[{'name':'beat-saber.apk','role':'apk','id':'0','required':True}], 'status':{'playability':'local','download':'local'}}
  recipes=destination/'recipes';recipes.mkdir(exist_ok=True);save(recipes/'beatsaber140.json',recipe)
  unpacked=destination/'beatsaber140'
- note('正在读取 AVP Play 已下载的 1.40.8 文件…')
+ note(tr('正在读取 AVP Play 已下载的 1.40.8 文件…'))
  if unpacked.exists():shutil.rmtree(unpacked)
  command([Path(environment['avpApp'])/'Contents/Helpers/avpplay','unpack','beatsaber140','--recipes',recipes,'--store',environment['store'],'--to',unpacked],timeout=180)
- if version_of_tree(unpacked)!=1716:raise ValueError('APK 版本不匹配，需要 1.40.8（1716）。')
+ if version_of_tree(unpacked)!=1716:raise ValueError(tr('APK 版本不匹配，需要 1.40.8（1716）。'))
  if not build_app:return {'tree':str(unpacked),'versionCode':1716}
  matched=environment.get('matched')
  if matched:
-  target=destination/'Klepton.app';shutil.rmtree(target,ignore_errors=True);command(['/usr/bin/ditto',matched['app'],target]);note('已复用 AVP Play 的 1.40.8 应用构建。')
+  target=destination/'Klepton.app';shutil.rmtree(target,ignore_errors=True);command(['/usr/bin/ditto',matched['app'],target]);note(tr('已复用 AVP Play 的 1.40.8 应用构建。'))
  else:
-  note('现有构建属于其他版本，正在独立目录准备 1.40.8…')
+  note(tr('现有构建属于其他版本，正在独立目录准备 1.40.8…'))
   chain=destination/'toolchain'
   if chain.exists():shutil.rmtree(chain)
   command(['/bin/cp','-cR',environment['toolchains'][0],chain],timeout=300)
@@ -96,34 +97,34 @@ def prepare(environment,support,resources,team,bundle,note,*,build_app=True):
   env.pop('KLEPTON_DISPLAY_OVERRIDE',None);env.pop('KLEPTON_DISPLAY_SUFFIX',None)
   env['PATH']=str(resources/'runtime/bin')+':/usr/bin:/bin:/usr/sbin:/sbin'
   if not (chain/'build/klepton-ld').is_file():command(['/usr/bin/make','build/klepton-ld'],cwd=chain,env=env)
-  note('正在转换 1.40.8 程序库…')
+  note(tr('正在转换 1.40.8 程序库…'))
   for script in ['mkguest.sh','mkangle.sh','mkmvk.sh']:command(['/bin/bash',script],cwd=chain/'visionos',env=env,timeout=600)
   command([resources/'runtime/bin/python3','gen_xcodeproj.py'],cwd=chain/'visionos',env=env)
-  note('正在生成独立的头显应用…')
+  note(tr('正在生成独立的头显应用…'))
   command(['/usr/bin/xcrun','xcodebuild','-project','Klepton.xcodeproj','-scheme','Klepton','-configuration','Debug','-sdk','xros','-destination','generic/platform=visionOS','-derivedDataPath',destination/'Derived','CODE_SIGNING_ALLOWED=NO','CODE_SIGNING_REQUIRED=NO','build'],cwd=chain/'visionos',env=env,timeout=1200)
   target=destination/'Derived/Build/Products/Debug-xros/Klepton.app'
- if not target.is_dir():raise RuntimeError('没有生成可用的头显应用，请检查 Xcode 和 AVP Play 工具链。')
+ if not target.is_dir():raise RuntimeError(tr('没有生成可用的头显应用，请检查 Xcode 和 AVP Play 工具链。'))
  result={'app':str(target),'tree':str(unpacked),'apk':environment['apk'],'versionCode':1716}
  save(destination/'runtime.json',result);return result
 
 
 def provisioning(resources,support,team,bundle,device,note):
- if not re.fullmatch(r'[A-Z0-9]{10}',team):raise ValueError('请输入自己的 10 位 Apple 开发团队 ID，或先在 AVP Play 完成签名设置。')
+ if not re.fullmatch(r'[A-Z0-9]{10}',team):raise ValueError(tr('请输入自己的 10 位 Apple 开发团队 ID，或先在 AVP Play 完成签名设置。'))
  support=Path(support);resources=Path(resources);folder=support/'signing'/bundle;project=folder/'LibrarySign.xcodeproj';project.mkdir(parents=True,exist_ok=True)
  path=folder/'Derived/Build/Products/Debug-xros/LibrarySign.app/embedded.mobileprovision'
  def parse():
   profile=plistlib.loads(subprocess.check_output(['/usr/bin/security','cms','-D','-i',str(path)],stderr=subprocess.DEVNULL))
   import datetime
-  if profile['ExpirationDate']<datetime.datetime.now()+datetime.timedelta(hours=12):raise ValueError('签名已过期')
-  if profile['TeamIdentifier'][0]!=team or profile['Entitlements']['application-identifier'].split('.',1)[1]!=bundle:raise ValueError('签名标识不匹配')
-  if device and device not in profile.get('ProvisionedDevices',[]):raise ValueError('签名尚未包含该头显')
+  if profile['ExpirationDate']<datetime.datetime.now()+datetime.timedelta(hours=12):raise ValueError(tr('签名已过期'))
+  if profile['TeamIdentifier'][0]!=team or profile['Entitlements']['application-identifier'].split('.',1)[1]!=bundle:raise ValueError(tr('签名标识不匹配'))
+  if device and device not in profile.get('ProvisionedDevices',[]):raise ValueError(tr('签名尚未包含该头显'))
   identities=command(['/usr/bin/security','find-identity','-v','-p','codesigning'])
   identity=next((hashlib.sha1(c).hexdigest().upper() for c in profile['DeveloperCertificates'] if hashlib.sha1(c).hexdigest().upper() in identities),None)
-  if not identity:raise ValueError('找不到签名证书的私钥')
+  if not identity:raise ValueError(tr('找不到签名证书的私钥'))
   return profile,identity,path
  try:return parse()
  except (OSError,ValueError,KeyError,StopIteration,subprocess.SubprocessError):pass
- note('正在通过本机 Xcode 账户生成你的开发签名…')
+ note(tr('正在通过本机 Xcode 账户生成你的开发签名…'))
  (folder/'Main.swift').write_text('import SwiftUI\n@main struct SigningApp: App { var body: some Scene { WindowGroup { Text("SaberDock") } } }')
  entitlements={'com.apple.developer.kernel.extended-virtual-addressing':True,'com.apple.developer.kernel.increased-memory-limit':True,'com.apple.developer.low-latency-streaming':True}
  (folder/'Headset.entitlements').write_bytes(plistlib.dumps(entitlements))

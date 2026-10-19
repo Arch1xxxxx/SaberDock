@@ -4,7 +4,7 @@ from pathlib import Path
 import json,plistlib,re,sys
 
 def audit(app):
- app=Path(app);resources=app/'Contents/Resources';allowed={'runtime','python-libs','node_modules','licenses','LICENSE','THIRD-PARTY.md','DEPENDENCIES.json','AppIcon.icns','backend.py','integration.py','build.py','convert.cjs','SigningProject.pbxproj'}
+ app=Path(app);resources=app/'Contents/Resources';allowed={'runtime','python-libs','node_modules','licenses','LICENSE','THIRD-PARTY.md','DEPENDENCIES.json','AppIcon.icns','backend.py','integration.py','build.py','convert.cjs','i18n.py','i18n.cjs','messages.json','SigningProject.pbxproj'}
  unexpected={p.name for p in resources.iterdir()}-allowed
  if unexpected:raise ValueError('Unexpected release resources: '+', '.join(sorted(unexpected)))
  for path in app.rglob('*'):

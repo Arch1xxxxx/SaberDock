@@ -12,7 +12,7 @@ SaberDock then works with that existing local installation to organize maps and 
 
 ## Before you begin: game license and platform terms
 
-SaberDock modifies local Beat Saber game assets and uses a third-party toolchain to prepare an app for Apple Vision Pro. **Section 4.2.5 of the [Beat Saber End User License Agreement](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)** restricts editing, merging, distributing, translating, reverse engineering, decompiling, and disassembling the game, except as specifically permitted by the agreement, prior consent, or mandatory applicable law. **Section 6.1** permits termination of the game license for a material breach.
+SaberDock modifies local Beat Saber game assets and uses a third-party toolchain to prepare an app for Apple Vision Pro. **Section 4.2.5 of the [Beat Saber End User License Agreement](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)** sets restrictions on editing, merging, distributing, translating, reverse engineering, decompiling, and disassembling the game. Refer to the agreement for the full scope of these restrictions. **Section 6.1** permits termination of the game license for a material breach.
 
 Using SaberDock may conflict with these restrictions or other applicable store and developer-service terms. Purchasing the game does not itself authorize these activities. This project does not guarantee official permission or protection from account or service restrictions. Review the current terms applicable to your account and location before proceeding.
 
@@ -149,7 +149,7 @@ SaberDock 在现有本地安装的基础上管理谱面，并准备独立的自�
 
 ## 使用前须知：游戏许可与平台条款
 
-SaberDock 会修改本地 Beat Saber 游戏资源，并通过第三方工具链准备在 Apple Vision Pro 上运行的应用。**[Beat Saber 最终用户许可协议](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)第 4.2.5 条**限制编辑、合并、分发、转译、逆向工程、反编译和反汇编游戏，但协议明确允许、事先获得同意或适用法律强制允许的情况除外。**第 6.1 条**规定，重大违约可能导致游戏使用许可被终止。
+SaberDock 会修改本地 Beat Saber 游戏资源，并通过第三方工具链准备在 Apple Vision Pro 上运行的应用。**[Beat Saber 最终用户许可协议](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)第 4.2.5 条**对编辑、合并、分发、转译、逆向工程、反编译和反汇编游戏设有限制，具体范围以原协议为准。**第 6.1 条**规定，重大违约可能导致游戏使用许可被终止。
 
 使用 SaberDock 可能与上述限制或相关商店、开发者服务条款冲突。购买游戏本身不代表获得上述用途的授权。本项目不保证这些用途获得官方许可，也不保证相关账户或服务不受限制。使用前请阅读适用于你的账户与所在地的现行条款。
 

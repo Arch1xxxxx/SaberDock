@@ -12,7 +12,7 @@ SaberDock 在现有本地安装的基础上管理谱面，并准备独立的自�
 
 ## 使用前须知：游戏许可与平台条款
 
-SaberDock 会修改本地 Beat Saber 游戏资源，并通过第三方工具链准备在 Apple Vision Pro 上运行的应用。**[Beat Saber 最终用户许可协议](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)第 4.2.5 条**限制编辑、合并、分发、转译、逆向工程、反编译和反汇编游戏，但协议明确允许、事先获得同意或适用法律强制允许的情况除外。**第 6.1 条**规定，重大违约可能导致游戏使用许可被终止。
+SaberDock 会修改本地 Beat Saber 游戏资源，并通过第三方工具链准备在 Apple Vision Pro 上运行的应用。**[Beat Saber 最终用户许可协议](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)第 4.2.5 条**对编辑、合并、分发、转译、逆向工程、反编译和反汇编游戏设有限制，具体范围以原协议为准。**第 6.1 条**规定，重大违约可能导致游戏使用许可被终止。
 
 使用 SaberDock 可能与上述限制或相关商店、开发者服务条款冲突。购买游戏本身不代表获得上述用途的授权。本项目不保证这些用途获得官方许可，也不保证相关账户或服务不受限制。使用前请阅读适用于你的账户与所在地的现行条款。
 

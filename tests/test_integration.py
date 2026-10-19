@@ -1,4 +1,4 @@
-import json,plistlib,sys,tempfile,unittest
+import hashlib,json,os,plistlib,shutil,sys,tempfile,unittest,zipfile
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
@@ -15,11 +15,12 @@ class DiscoveryTests(unittest.TestCase):
   folder=self.store/f'beatsaber140-{code}';folder.mkdir();(folder/'beat-saber.apk').write_bytes(b'fixture');(folder/f'main.{code}.com.beatgames.beatsaber.obb').write_bytes(b'fixture')
  def test_external_store_and_latest_version_not_mixed(self):
   self.add_download(3237);env=self.discover();self.assertFalse(env['ready']);self.assertEqual(env['store'],str(self.store.resolve()));self.assertIn('1.40.8','\n'.join(env['issues']))
-  self.add_download(1716);self.assertTrue(self.discover()['ready'])
+  self.add_download(1716);self.assertFalse(self.discover()['ready']);self.assertIn('AVP Play','\n'.join(self.discover()['issues']))
  def test_other_version_build_never_reused(self):
   self.add_download(1716);tree=self.chain/'beatsaber140';tree.mkdir();(tree/'apktool.yml').write_text('versionInfo:\n  versionCode: 3237\n')
-  app=self.chain/'visionos/build/dd-device-beatsaber140/Build/Products/Debug-xros/Klepton.app';app.mkdir(parents=True);(app/'Info.plist').write_bytes(plistlib.dumps({'KLObbFile':i.OBB_NAME,'KLTree':'beatsaber140'}))
-  self.assertIsNone(self.discover()['matched']);(tree/'apktool.yml').write_text('versionInfo:\n  versionCode: 1716\n');self.assertIsNotNone(self.discover()['matched'])
+  app=self.chain/'visionos/build/dd-device-beatsaber140/Build/Products/Debug-xros/Klepton.app';app.mkdir(parents=True);(app/'Info.plist').write_bytes(plistlib.dumps({'KLObbFile':i.OBB_NAME,'KLTree':'beatsaber140','CFBundleExecutable':'Klepton'}));(app/'Klepton').write_bytes(b'fixture executable')
+  self.assertIsNone(self.discover()['matched']);(tree/'apktool.yml').write_text('versionInfo:\n  versionCode: 1716\n');self.assertIsNotNone(self.discover()['matched']);self.assertTrue(self.discover()['ready'])
+  (app/'Klepton').unlink();self.assertFalse(self.discover()['ready']);self.assertIsNone(self.discover()['matched'])
  def test_team_from_local_job(self):
   i.save(self.base/'jobs/beatsaber140-fixture.json',{'updated':'2026-01-01','request':{'team':'ABCDE12345','toolchain':str(self.chain)}})
   self.assertEqual(self.discover()['team'],'ABCDE12345')
@@ -82,3 +83,55 @@ class SigningTests(unittest.TestCase):
    def run(args):
     if '--verify' in args and Path(args[-1]).name=='App.debug.dylib':raise RuntimeError('missing code signature')
    with self.assertRaisesRegex(RuntimeError,'missing code signature'):i.sign_application(app,'IDENTITY',Path(folder)/'sign.entitlements',run)
+
+
+class RuntimeReuseTests(unittest.TestCase):
+ def setUp(self):
+  self.temp=tempfile.TemporaryDirectory();self.base=Path(self.temp.name)
+  self.tree=self.base/'AVPPlay/beatsaber140';self.tree.mkdir(parents=True);(self.tree/'apktool.yml').write_text('versionCode: 1716\n')
+  self.app=self.base/'AVPPlay/Klepton.app';self.app.mkdir()
+  (self.app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable':'Klepton','KLObbFile':i.OBB_NAME,'KLTree':'beatsaber140'}))
+  (self.app/'Klepton').write_bytes(b'fixture translated executable')
+  self.apk=self.base/'game.apk';self.obb=self.base/'game.obb'
+  for path,entries in [(self.apk,['AndroidManifest.xml','lib/arm64-v8a/libil2cpp.so']),(self.obb,['assets/BeatmapLevelsData/fitbeat','assets/aa/catalog.json'])]:
+   with zipfile.ZipFile(path,'w') as archive:
+    for name in entries:archive.writestr(name,b'fixture')
+  self.support=self.base/'support'
+  self.env={'ready':True,'issues':[],'apk':str(self.apk),'sourceObb':str(self.obb),'avpApp':str(self.base/'AVP Play.app'),'store':str(self.base),'toolchains':[str(self.tree.parent)],'matched':{'app':str(self.app),'tree':str(self.tree)}}
+  self.calls=[]
+ def tearDown(self):self.temp.cleanup()
+ def command(self,args,**kwargs):
+  args=[str(a) for a in args];self.calls.append(args)
+  if 'unpack' in args:
+   tree=Path(args[args.index('--to')+1]);tree.mkdir();(tree/'apktool.yml').write_text('versionCode: 1716\n')
+  elif args[0]=='/usr/bin/ditto':shutil.copytree(args[1],args[2])
+  else:raise AssertionError('Unexpected external operation: '+repr(args))
+ def prepare(self):
+  return i.prepare(self.env,self.support,self.base/'resources','ABCDE12345','io.fixture',lambda message:None)
+ def test_only_existing_app_is_copied_and_cached(self):
+  with patch.object(i,'command',side_effect=self.command):
+   result=self.prepare()
+   self.assertEqual((Path(result['app'])/'Klepton').read_bytes(),(self.app/'Klepton').read_bytes())
+   self.assertEqual(len(self.calls),2);self.assertEqual(self.calls[-1][0],'/usr/bin/ditto')
+   self.assertEqual(self.prepare(),result);self.assertEqual(len(self.calls),2)
+ def test_missing_match_stops_before_commands_even_with_legacy_cache(self):
+  legacy_id=hashlib.sha256((str(self.apk)+hashlib.sha256(self.apk.read_bytes()).hexdigest()+str(self.env['toolchains'])+'io.fixture').encode()).hexdigest()[:24]
+  i.save(self.support/'runtime-prepared'/legacy_id/'runtime.json',{'app':str(self.app),'tree':str(self.tree),'versionCode':1716})
+  self.env['matched']=None
+  for language,phrase in [('en','complete its installation in AVP Play'),('zh-Hans','在 AVP Play 下载该版本并完成安装')]:
+   with patch.dict(os.environ,{'SABERDOCK_LANGUAGE':language}),patch.object(i,'command') as command:
+    with self.assertRaisesRegex(ValueError,phrase):self.prepare()
+    command.assert_not_called()
+ def test_source_deleted_after_discovery_cannot_be_replaced_by_cache(self):
+  with patch.object(i,'command',side_effect=self.command):
+   self.prepare();self.calls.clear();(self.app/'Klepton').unlink()
+   with self.assertRaisesRegex(ValueError,'AVP Play'):self.prepare()
+   self.assertEqual(self.calls,[])
+ def test_cache_without_reuse_provenance_is_not_trusted(self):
+  with patch.object(i,'command',side_effect=self.command):
+   result=self.prepare();manifest=Path(result['app']).parent/'runtime.json'
+   data=i.read(manifest);data.pop('sourceBuild');i.save(manifest,data)
+   (Path(result['app'])/'Klepton').write_bytes(b'old fallback executable')
+   self.calls.clear();result=self.prepare()
+   self.assertEqual((Path(result['app'])/'Klepton').read_bytes(),(self.app/'Klepton').read_bytes())
+   self.assertEqual(len(self.calls),2)

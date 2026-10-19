@@ -12,7 +12,7 @@ SaberDock 在现有本地安装的基础上管理谱面，并准备独立的自�
 
 ## 使用前须知：游戏许可与平台条款
 
-SaberDock 会修改本地 Beat Saber 游戏资源，并通过第三方工具链准备在 Apple Vision Pro 上运行的应用。**[Beat Saber 最终用户许可协议](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)第 4.2.5 条**对编辑、合并、分发、转译、逆向工程、反编译和反汇编游戏设有限制，具体范围以原协议为准。**第 6.1 条**规定，重大违约可能导致游戏使用许可被终止。
+SaberDock 会修改本地 Beat Saber 游戏资源，并复用 AVP Play 已经生成的 visionOS 应用。**[Beat Saber 最终用户许可协议](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)第 4.2.5 条**对编辑、合并、分发、转译、逆向工程、反编译和反汇编游戏设有限制，具体范围以原协议为准。**第 6.1 条**规定，重大违约可能导致游戏使用许可被终止。
 
 使用 SaberDock 可能与上述限制或相关商店、开发者服务条款冲突。购买游戏本身不代表获得上述用途的授权。本项目不保证这些用途获得官方许可，也不保证相关账户或服务不受限制。使用前请阅读适用于你的账户与所在地的现行条款。
 
@@ -41,7 +41,7 @@ SaberDock 会修改本地 Beat Saber 游戏资源，并通过第三方工具链�
 
 1. 在 Mac 上安装 [AVP Play](https://github.com/myMartek/avp-play)，按其使用指引完成设置。
 2. 在 AVP Play 中连接拥有 **Beat Saber 1.40.8（1716）** 的 Meta 账户，按其指引完成购买验证，并准备由 Meta 提供的游戏文件。
-3. 先通过 AVP Play 完成一次游戏安装，确认游戏能在 Vision Pro 上启动，再按下文安装 SaberDock。
+3. 先通过 AVP Play 完成一次游戏安装，确认游戏能在 Vision Pro 上启动，并保留 AVP Play 本机生成的应用与已下载游戏文件。SaberDock 只复用对应版本的现有构建，不自行转译游戏或重新构建游戏可执行程序；若缺少构建，请先返回 AVP Play 完成安装，再按下文安装 SaberDock。
 
 ## 在 Mac 上安装 SaberDock
 

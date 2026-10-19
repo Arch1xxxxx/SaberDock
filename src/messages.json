@@ -59,10 +59,6 @@
   "找不到 AVP Play 工具链，请先用 AVP Play 完成一次游戏安装。": "AVP Play toolchain not found. Complete a game installation in AVP Play first.",
   "APK 版本不匹配，需要 1.40.8（1716）。": "APK version mismatch. Beat Saber 1.40.8 (1716) is required.",
   "已复用 AVP Play 的 1.40.8 应用构建。": "Reused AVP Play's 1.40.8 app build.",
-  "现有构建属于其他版本，正在独立目录准备 1.40.8…": "The existing build uses another version. Preparing 1.40.8 in a separate folder…",
-  "正在转换 1.40.8 程序库…": "Translating the 1.40.8 program libraries…",
-  "正在生成独立的头显应用…": "Building the separate headset app…",
-  "没有生成可用的头显应用，请检查 Xcode 和 AVP Play 工具链。": "No usable headset app was built. Check Xcode and the AVP Play toolchain.",
   "请输入自己的 10 位 Apple 开发团队 ID，或先在 AVP Play 完成签名设置。": "Enter your own 10-character Apple development team ID or configure signing in AVP Play first.",
   "AVP Play 中的 APK 不完整或不是 ARM64 Beat Saber。": "The APK in AVP Play is incomplete or is not an ARM64 Beat Saber APK.",
   "下载资源缺少 1.40.8 曲库模板，请在 AVP Play 中修复该版本下载。": "The download is missing 1.40.8 library templates. Repair this version's download in AVP Play.",
@@ -100,5 +96,6 @@
   "该谱面的音频偏移或 Shuffle 暂不支持": "Audio offsets and Shuffle are not supported",
   "仅支持 Standard（标准双剑）谱面": "Only Standard two-saber maps are supported",
   "复用已校验谱面：": "Reusing verified map: ",
-  "头显曲库资源大小不匹配，请点击安装重试": "Headset library size mismatch. Click Install to try again"
+  "头显曲库资源大小不匹配，请点击安装重试": "Headset library size mismatch. Click Install to try again",
+  "未找到 AVP Play 已生成的 Beat Saber 1.40.8（1716）应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。": "AVP Play's completed Beat Saber 1.40.8 (1716) app was not found. Download this version and complete its installation in AVP Play first. Confirm it launches on Vision Pro, then return to SaberDock."
 }

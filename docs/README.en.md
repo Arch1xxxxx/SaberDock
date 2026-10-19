@@ -12,7 +12,7 @@ SaberDock then works with that existing local installation to organize maps and 
 
 ## Before you begin: game license and platform terms
 
-SaberDock modifies local Beat Saber game assets and uses a third-party toolchain to prepare an app for Apple Vision Pro. **Section 4.2.5 of the [Beat Saber End User License Agreement](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)** sets restrictions on editing, merging, distributing, translating, reverse engineering, decompiling, and disassembling the game. Refer to the agreement for the full scope of these restrictions. **Section 6.1** permits termination of the game license for a material breach.
+SaberDock modifies local Beat Saber game assets and reuses the visionOS app already built by AVP Play. **Section 4.2.5 of the [Beat Saber End User License Agreement](https://www.meta.com/legal/quest/beat-saber-end-user-license-agreement)** sets restrictions on editing, merging, distributing, translating, reverse engineering, decompiling, and disassembling the game. Refer to the agreement for the full scope of these restrictions. **Section 6.1** permits termination of the game license for a material breach.
 
 Using SaberDock may conflict with these restrictions or other applicable store and developer-service terms. Purchasing the game does not itself authorize these activities. This project does not guarantee official permission or protection from account or service restrictions. Review the current terms applicable to your account and location before proceeding.
 
@@ -41,7 +41,7 @@ A Quest headset is not required. SaberDock does not sign in to Meta, download ga
 
 1. Install [AVP Play](https://github.com/myMartek/avp-play) on your Mac and follow its setup guide.
 2. In AVP Play, connect the Meta account that owns **Beat Saber 1.40.8 (1716)**. Follow AVP Play's guide to verify your purchase and prepare the game files supplied by Meta.
-3. Complete a game installation with AVP Play and confirm it can launch on your Vision Pro. Then install SaberDock below.
+3. Complete a game installation with AVP Play and confirm it can launch on your Vision Pro. Keep AVP Play's local app build and downloaded game files. SaberDock reuses that matching build; it does not translate the game or rebuild its executable. If the build is missing, return to AVP Play and complete the installation there first. Then install SaberDock below.
 
 ## Install SaberDock on your Mac
 

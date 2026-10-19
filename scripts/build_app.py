@@ -3,7 +3,7 @@
 import argparse,hashlib,json,os,plistlib,shutil,subprocess,sys,tarfile,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
-BUILD=ROOT/'.build';DIST=ROOT/'dist';VERSION='0.1.0'
+BUILD=ROOT/'.build';DIST=ROOT/'dist';VERSION='0.1.1'
 def run(args,**kw):subprocess.run([str(x) for x in args],check=True,**kw)
 def download(item):
  target=BUILD/Path(item['url']).name

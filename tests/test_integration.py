@@ -58,3 +58,27 @@ class FreshInstallFlowTests(unittest.TestCase):
     for event in mutations:
      if 'copy' in event:self.assertIn(bundle,event)
     self.assertEqual(i.read(base/'support/latest-success.json')['bundle'],bundle)
+
+class SigningTests(unittest.TestCase):
+ def fixture(self,root):
+  app=root/'App.app';app.mkdir();(app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable':'App'}))
+  (app/'App').write_bytes(b'\xcf\xfa\xed\xfeMAIN')
+  (app/'App.debug.dylib').write_bytes(b'\xcf\xfa\xed\xfeDEBUG')
+  (app/'__preview.dylib').write_bytes(b'\xca\xfe\xba\xbePREVIEW')
+  framework=app/'Frameworks/Guest.framework';framework.mkdir(parents=True);(framework/'Guest').write_bytes(b'\xcf\xfa\xed\xfeGUEST')
+  (app/'resource.txt').write_text('fixture');return app,framework
+ def test_debug_preview_and_framework_are_signed_and_explicitly_verified(self):
+  with tempfile.TemporaryDirectory() as folder:
+   app,framework=self.fixture(Path(folder));calls=[]
+   i.sign_application(app,'IDENTITY',Path(folder)/'sign.entitlements',lambda args:calls.append([str(v) for v in args]))
+   signed=[Path(c[-1]) for c in calls if '--force' in c];verified=[Path(c[-1]) for c in calls if '--verify' in c]
+   for name in ['App.debug.dylib','__preview.dylib']:
+    self.assertIn(app/name,signed);self.assertIn(app/name,verified);self.assertLess(signed.index(app/name),signed.index(app))
+   self.assertIn(framework/'Guest',signed);self.assertLess(signed.index(framework/'Guest'),signed.index(framework));self.assertEqual(signed[-1],app)
+   self.assertNotIn(app/'resource.txt',signed)
+ def test_embedded_library_verification_failure_aborts_signing(self):
+  with tempfile.TemporaryDirectory() as folder:
+   app,_=self.fixture(Path(folder))
+   def run(args):
+    if '--verify' in args and Path(args[-1]).name=='App.debug.dylib':raise RuntimeError('missing code signature')
+   with self.assertRaisesRegex(RuntimeError,'missing code signature'):i.sign_application(app,'IDENTITY',Path(folder)/'sign.entitlements',run)

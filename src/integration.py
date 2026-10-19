@@ -132,3 +132,25 @@ def provisioning(resources,support,team,bundle,device,note):
  (project/'project.pbxproj').write_text(template)
  command(['/usr/bin/xcrun','xcodebuild','-project',project,'-scheme','LibrarySign','-configuration','Debug','-sdk','xros','-destination','id='+device if device else 'generic/platform=visionOS','-derivedDataPath',folder/'Derived','-allowProvisioningUpdates','-allowProvisioningDeviceRegistration','build'],timeout=600)
  return parse()
+
+
+def sign_application(app,identity,entitlements,run=command):
+ """Sign every embedded Mach-O, including Xcode's root-level debug dylib.
+
+ A top-level `codesign --verify --deep` does not reliably check loose dylibs
+ beside the executable. Validate those explicitly before the app is installed.
+ """
+ app=Path(app);info=plistlib.loads((app/'Info.plist').read_bytes());main=(app/info['CFBundleExecutable']).resolve()
+ magic={b'\xcf\xfa\xed\xfe',b'\xfe\xed\xfa\xcf',b'\xce\xfa\xed\xfe',b'\xfe\xed\xfa\xce',b'\xca\xfe\xba\xbe',b'\xbe\xba\xfe\xca',b'\xca\xfe\xba\xbf',b'\xbf\xba\xfe\xca'}
+ binaries=[]
+ for path in app.rglob('*'):
+  if not path.is_file() or path.is_symlink() or path.resolve()==main:continue
+  with path.open('rb') as stream:header=stream.read(4)
+  if header in magic:binaries.append(path)
+ binaries.sort(key=lambda p:(-len(p.parts),str(p)))
+ for path in binaries:run(['/usr/bin/codesign','--force','--sign',identity,'--timestamp=none',path])
+ for framework in sorted(app.rglob('*.framework'),key=lambda p:len(p.parts),reverse=True):run(['/usr/bin/codesign','--force','--sign',identity,'--timestamp=none',framework])
+ run(['/usr/bin/codesign','--force','--sign',identity,'--entitlements',entitlements,'--timestamp=none','--generate-entitlement-der',app])
+ for path in binaries:run(['/usr/bin/codesign','--verify','--strict',path])
+ run(['/usr/bin/codesign','--verify','--deep','--strict',app])
+ return app

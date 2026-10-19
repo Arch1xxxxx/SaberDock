@@ -293,8 +293,7 @@ def sign_app(name,job):
  shutil.copy2(profile_file,target/'embedded.mobileprovision')
  entitlements=job/'signing.entitlements';entitlements.write_bytes(plistlib.dumps(profile['Entitlements']))
  run(['/usr/bin/xattr','-cr',target])
- for framework in sorted(target.rglob('*.framework'),key=lambda p:len(p.parts),reverse=True):run(['/usr/bin/codesign','--force','--sign',identity,'--timestamp=none',framework])
- run(['/usr/bin/codesign','--force','--sign',identity,'--entitlements',entitlements,'--timestamp=none','--generate-entitlement-der',target]);run(['/usr/bin/codesign','--verify','--deep','--strict',target]);return target
+ return integration.sign_application(target,identity,entitlements,run)
 
 def install(root,name,device):
  global DEVICE

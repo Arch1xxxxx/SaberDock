@@ -27,11 +27,16 @@ SaberDock 会修改本地 Beat Saber 游戏资源，并复用 AVP Play 已经生
 
 ## 使用前准备
 
-- Apple Silicon Mac，macOS 14 或更新版本。
-- **先安装并配置 [AVP Play](https://github.com/myMartek/avp-play)**，准备你已购买的 Beat Saber 并完成一次 Vision Pro 安装。请在本机保留生成的 visionOS 应用、APK、OBB 和游戏数据文件夹。所选游戏版本须先在 AVP Play 中使用所选 Toolchain 至少完成一次构建。可以尝试本地已有版本，包括较新版本；**1.40.8** 是经过 SaberDock 开发者测试的可选版本。
-- 已登录自己 Apple 开发账户的 Xcode，及与 AVP Play 工具链兼容的 visionOS SDK。请先通过 AVP Play 完成一次安装。
-- 你自己的 Apple Vision Pro，已与 Xcode 配对并开启开发者模式，保持解锁，与 Mac 连接同一网络。
-- 足够的本机空间，用于歌曲处理与生成曲库。
+开始前，请确认已准备好以下环境：
+
+- 运行 macOS 14 或更新版本的 Apple Silicon Mac。
+- 已安装 visionOS SDK 的 Xcode，并登录你自己的 Apple 开发账户；SDK 需与所用的 AVP Play 工具链兼容。
+- 你自己的 Apple Vision Pro，已与 Xcode 配对并开启开发者模式。安装或同步时，请保持头显解锁，并与 Mac 连接同一网络。
+- 足够的本机可用空间，用于处理歌曲、生成曲库和保存应用文件。
+
+**请先安装并配置 [AVP Play](https://github.com/myMartek/avp-play)，通过拥有 Beat Saber 的 Meta 账户准备已购游戏。** SaberDock 可选择 AVP Play 本机已有的游戏版本和 Toolchain。你可以尝试较新版本；若不兼容，可选择经过 SaberDock 开发者测试的 **1.40.8**。
+
+**无论选择哪个游戏版本，都需先在 AVP Play 中，使用对应 Toolchain 至少完成一次构建。** 请保留生成的 visionOS 应用及对应游戏文件，供 SaberDock 自动读取；仅下载游戏文件不足以完成头显应用的安装。
 
 不需要 Quest 头显。SaberDock 不登录 Meta、不下载游戏、不解锁付费内容，也不从其他来源获取游戏文件。
 

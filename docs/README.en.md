@@ -27,11 +27,16 @@ Using SaberDock may conflict with these restrictions or other applicable store a
 
 ## Requirements
 
+Before you begin, make sure you have:
+
 - An Apple Silicon Mac running macOS 14 or later.
-- **Install and configure [AVP Play](https://github.com/myMartek/avp-play) first.** Prepare your purchased Beat Saber game and complete an installation on Vision Pro. Keep the generated visionOS app, APK, OBB, and game data folder locally. Complete at least one build of your selected game version with the selected toolchain in AVP Play. You can try locally available versions, including newer releases; **1.40.8** is the option tested by the SaberDock developer.
-- Xcode with a visionOS SDK compatible with your AVP Play toolchain, signed in to your own Apple development account. Complete an AVP Play installation first.
-- Your Apple Vision Pro paired with Xcode, with Developer Mode enabled, unlocked, and connected to the same network as the Mac.
-- Free space for local processing and the generated library.
+- Xcode with a visionOS SDK compatible with your AVP Play toolchain, signed in to your own Apple development account.
+- Your own Apple Vision Pro, paired with Xcode and with Developer Mode enabled. Keep it unlocked and on the same network as your Mac during installation or syncing.
+- Enough free space on your Mac to process songs, generate the library, and store app files.
+
+**Install and configure [AVP Play](https://github.com/myMartek/avp-play) first, and prepare your purchased game using the Meta account that owns Beat Saber.** SaberDock lets you choose game versions and toolchains already present locally in AVP Play. You can try a newer version; if it is incompatible, choose **1.40.8**, which has been tested by the SaberDock developer.
+
+**Whichever game version you choose, complete at least one build of it in AVP Play using the corresponding toolchain.** Keep the generated visionOS app and associated game files for SaberDock to read automatically. Downloading the game files alone is not enough to install the headset app.
 
 A Quest headset is not required. SaberDock does not sign in to Meta, download games, unlock purchases, or obtain game files from third-party sources.
 

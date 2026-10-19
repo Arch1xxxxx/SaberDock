@@ -88,7 +88,7 @@ Library files remain where you choose. Processing caches, locally generated head
 ~/Library/Application Support/SaberDock/
 ```
 
-SaberDock reads AVP Play's relevant local downloads, installation records, and toolchain; it does not read Meta login credentials. Do not upload generated headset apps, game files, signing credentials, or your Application Support folder to this repository.
+SaberDock reads AVP Play's relevant local downloads, installation records, and toolchain; it does not read Meta login credentials.
 
 ## Build from source
 
@@ -215,7 +215,7 @@ SaberDock 使用通过 AVP Play 从 Meta 下载的游戏文件和你自己的签
 ~/Library/Application Support/SaberDock/
 ```
 
-SaberDock 读取 AVP Play 相关的本地下载、安装记录和工具链，不读取 Meta 登录凭据。请勿将生成的头显应用、游戏文件、签名凭据或 Application Support 文件夹上传到本仓库。
+SaberDock 读取 AVP Play 相关的本地下载、安装记录和工具链，不读取 Meta 登录凭据。
 
 ## 从源码构建
 

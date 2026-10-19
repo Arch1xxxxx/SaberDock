@@ -190,15 +190,6 @@ class ManualSelectionTests(unittest.TestCase):
   self.assertTrue(env['ready'],env['issues']);self.assertEqual(env['sourceObb'],str(self.obb))
   self.assertEqual(env['obbName'],'game.obb');self.assertEqual(env['version'],'')
   i.validate_source(env)
- def test_manual_selection_overrides_discovery_and_survives_configure(self):
-  args=argparse.Namespace(action='configure',avp_root=str(self.base/'missing-data'),avp_app=None,store=str(self.base/'missing-store'),team='ABCDE12345',runtime_app=str(self.app),apk=str(self.apk),obb=str(self.obb),game_tree=str(self.tree))
-  with patch.multiple(b,SUPPORT=self.support,ENVIRONMENT={},TEAM='',BUNDLE='',SOURCE=Path('/nonexistent')):
-   env=b.configure(args);self.assertTrue(env['ready'],env['issues'])
-   saved=i.read(self.support/'settings.json')
-   self.assertEqual(saved['runtimeApp'],str(self.app));self.assertEqual(saved['sourceObb'],str(self.obb))
-   for key in ['avp_root','avp_app','store','team','runtime_app','apk','obb','game_tree']:setattr(args,key,None)
-   args.action='environment';again=b.configure(args)
-   self.assertTrue(again['ready']);self.assertEqual(again['apk'],str(self.apk))
  def test_invalid_explicit_app_never_silently_uses_another_build(self):
   env=i.discover(self.base,runtime_app=self.base/'not-an-app',apk=self.apk,obb=self.obb,tree=self.tree)
   self.assertFalse(env['ready']);self.assertIn('Select the game visionOS app','\n'.join(env['issues']))
@@ -214,3 +205,51 @@ class SourceChangeTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as folder,patch.multiple(b,SUPPORT=Path(folder),ENVIRONMENT={}),patch.object(b,'install',return_value={'installed':True}) as install,patch.object(b,'preflight') as preflight:
    self.assertTrue(b.update(folder,'SaberDock','fixture-device')['installed'])
    install.assert_called_once_with(folder,'SaberDock','fixture-device');preflight.assert_not_called()
+
+class VersionSelectionTests(unittest.TestCase):
+ setUp=DiscoveryTests.setUp
+ tearDown=DiscoveryTests.tearDown
+ discover=DiscoveryTests.discover
+ add_download=DiscoveryTests.add_download
+ add_build=DiscoveryTests.add_build
+ def test_catalog_lists_downloads_and_toolchains_with_version_names(self):
+  self.add_download(1716);self.add_download(3237);self.add_build('1.45.3_30054',3237)
+  other=self.base/'toolchains/older-revision';other.mkdir()
+  i.save(self.base/'jobs/beatsaber140-old.json',{'recipe':{'versionName':'1.40.8_7379','versionCode':1716}})
+  env=self.discover()
+  self.assertEqual({p['label'] for p in env['gameVersions']},{'1.40.8_7379 · 1716','1.45.3_30054 · 3237'})
+  self.assertEqual({p['label'] for p in env['toolchainVersions']},{'arbitrary-revision','older-revision'})
+  self.assertEqual(env['selectedGame'],str((self.store/'beatsaber140-3237').resolve()))
+ def test_selection_resolves_files_in_selected_toolchain_only(self):
+  self.add_download(1716);old=self.add_build('1.40.8',1716)
+  other=self.base/'toolchains/second-revision';shutil.copytree(self.chain,other)
+  self.add_download(3237);self.add_build('1.45.3',3237)
+  env=i.discover(self.base,self.app,game_version=str(self.store/'beatsaber140-1716'),toolchain_version=str(other))
+  self.assertTrue(env['ready'],env['issues']);self.assertTrue(env['runtimeApp'].startswith(str(other.resolve())))
+  self.assertEqual(env['versionCode'],1716)
+  mismatch=i.discover(self.base,self.app,game_version=str(self.store/'beatsaber140-1716'),toolchain_version=str(self.chain))
+  self.assertFalse(mismatch['ready']);self.assertIsNone(mismatch['matched'])
+  self.assertIn('Complete installation',' '.join(mismatch['issues']))
+ def test_missing_selection_never_silently_selects_a_different_folder(self):
+  self.add_download(1716);self.add_build('1.40.8',1716)
+  for selected in [{'game_version':str(self.store/'removed')},{'toolchain_version':str(self.base/'toolchains/removed')}]:
+   env=i.discover(self.base,self.app,**selected)
+   self.assertFalse(env['ready']);self.assertIsNone(env['matched'])
+ def test_configuration_persists_two_choices_and_ignores_retired_file_paths(self):
+  self.add_download(1716);self.add_build('1.40.8',1716)
+  support=self.base/'SaberDock'
+  i.save(support/'settings.json',{'runtimeApp':'/stale.app','apk':'/stale.apk','sourceObb':'/stale.obb','gameTree':'/stale-tree'})
+  args=argparse.Namespace(action='configure',avp_root=str(self.base),avp_app=str(self.app),store=None,team=None,
+                          game_version=str(self.store/'beatsaber140-1716'),toolchain_version=str(self.chain))
+  with patch.multiple(b,SUPPORT=support,ENVIRONMENT={},TEAM='',BUNDLE='',SOURCE=Path('/nonexistent')):
+   env=b.configure(args);self.assertTrue(env['ready'],env['issues'])
+   saved=i.read(support/'settings.json')
+   self.assertEqual(saved['selectedGame'],str(Path(args.game_version).resolve()));self.assertEqual(saved['selectedToolchain'],str(Path(args.toolchain_version).resolve()))
+   self.assertNotIn('runtimeApp',saved);self.assertNotIn('sourceObb',saved)
+   args=argparse.Namespace(action='environment')
+   again=b.configure(args);self.assertEqual(again['runtimeApp'],env['runtimeApp']);self.assertTrue(again['ready'])
+ def test_download_with_missing_apk_remains_visible_and_reports_missing_file(self):
+  self.add_download(1716);self.add_build('1.40.8',1716)
+  (self.store/'beatsaber140-1716/beat-saber.apk').unlink()
+  env=self.discover();self.assertEqual(len(env['gameVersions']),1);self.assertFalse(env['ready'])
+  self.assertIn('APK',' '.join(env['issues']))

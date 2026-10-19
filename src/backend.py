@@ -340,7 +340,7 @@ def install(root,name,device):
   if len(ds)!=1:raise ValueError(tr('请选择要安装的 Vision Pro'))
   device=ds[0]['id']
  DEVICE=device
- if not re.fullmatch(r'[A-Z0-9]{10}',TEAM):raise ValueError(tr('请在安装设置中填写自己的 Apple 开发团队 ID'))
+ if not re.fullmatch(r'[A-Z0-9]{10}',TEAM):raise ValueError(tr('未找到 Apple 开发签名设置，请先在 AVP Play 使用自己的 Apple 账户完成一次游戏安装。'))
  job=SUPPORT/'builds'/(time.strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:6]);job.mkdir(parents=True)
  # Build and sign completely before installing or staging any data.
  report=build(root,job);app=sign_app(name,job)
@@ -442,11 +442,15 @@ def update(root,name,device,rename_only=False):
 def configure(arguments):
  global ENVIRONMENT,TEAM,BUNDLE,SOURCE
  settings=read_json(SUPPORT/'settings.json',{})
- for key,attr in [('avpRoot','avp_root'),('avpApp','avp_app'),('store','store'),('team','team'),('runtimeApp','runtime_app'),('apk','apk'),('sourceObb','obb'),('gameTree','game_tree')]:
+ for key,attr in [('avpRoot','avp_root'),('avpApp','avp_app'),('store','store'),('team','team'),('selectedGame','game_version'),('selectedToolchain','toolchain_version')]:
   value=getattr(arguments,attr,None)
   if value is not None:settings[key]=value
- if arguments.action=='configure':atomic(SUPPORT/'settings.json',settings)
- ENVIRONMENT=integration.discover(settings.get('avpRoot') or None,settings.get('avpApp') or None,settings.get('store') or None,runtime_app=settings.get('runtimeApp') or None,apk=settings.get('apk') or None,obb=settings.get('sourceObb') or None,tree=settings.get('gameTree') or None)
+ # Retired individual file preferences must not override the dropdowns.
+ for key in ['runtimeApp','apk','sourceObb','gameTree']:settings.pop(key,None)
+ ENVIRONMENT=integration.discover(settings.get('avpRoot') or None,settings.get('avpApp') or None,settings.get('store') or None,game_version=settings.get('selectedGame') or None,toolchain_version=settings.get('selectedToolchain') or None)
+ if arguments.action=='configure':
+  settings.update(selectedGame=ENVIRONMENT['selectedGame'],selectedToolchain=ENVIRONMENT['selectedToolchain'])
+  atomic(SUPPORT/'settings.json',settings)
  TEAM=settings.get('team') or ENVIRONMENT.get('team','')
  BUNDLE='io.saberdock.'+TEAM.lower()+'.beatsaber140' if TEAM else 'io.saberdock.beatsaber140'
  SOURCE=Path(ENVIRONMENT['sourceObb'])
@@ -454,7 +458,7 @@ def configure(arguments):
  return ENVIRONMENT
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('action',choices=['environment','configure','prepare','install','order','delete','restore','init','scan','import','create','devices','build','update','rename','preflight']);p.add_argument('--root',default=str(Path.home()/'Music/SaberDock Library'));p.add_argument('--category',default='');p.add_argument('--name',default='SaberDock Custom Songs');p.add_argument('--device',default='');p.add_argument('--job');p.add_argument('--avp-root');p.add_argument('--avp-app');p.add_argument('--store');p.add_argument('--team');p.add_argument('--runtime-app');p.add_argument('--apk');p.add_argument('--obb');p.add_argument('--game-tree');p.add_argument('paths',nargs='*');a=p.parse_intermixed_args();SUPPORT.mkdir(parents=True,exist_ok=True)
+ p=argparse.ArgumentParser();p.add_argument('action',choices=['environment','configure','prepare','install','order','delete','restore','init','scan','import','create','devices','build','update','rename','preflight']);p.add_argument('--root',default=str(Path.home()/'Music/SaberDock Library'));p.add_argument('--category',default='');p.add_argument('--name',default='SaberDock Custom Songs');p.add_argument('--device',default='');p.add_argument('--job');p.add_argument('--avp-root');p.add_argument('--avp-app');p.add_argument('--store');p.add_argument('--team');p.add_argument('--game-version');p.add_argument('--toolchain-version');p.add_argument('paths',nargs='*');a=p.parse_intermixed_args();SUPPORT.mkdir(parents=True,exist_ok=True)
  lock=(SUPPORT/'job.lock').open('w')
  try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
  except BlockingIOError:raise ValueError(tr('另一个曲库操作正在进行，请稍后重试'))

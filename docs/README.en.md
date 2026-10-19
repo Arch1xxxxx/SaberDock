@@ -53,7 +53,7 @@ The app is locally signed and is not notarized by Apple. If macOS blocks the fir
 
 ## Set up and install on your headset
 
-1. Open **Installation Settings** and select the local **Vision Pro App (.app)**, **Game APK**, **Game OBB**, and **Game Data** folder. The app must be the game built for Vision Pro, not the Mac AVP Play.app. The data folder contains `assets` and `AndroidManifest.xml`; SaberDock will try to locate it beside the selected app. Automatic discovery is optional, and files may be stored elsewhere. Enter your Apple Team ID, then click **Save and Check**. The team ID is available in Xcode → Settings → Accounts.
+1. Open **Installation Settings**. Choose **Game Version** and **Toolchain Version** from the dropdowns, then click **Save and Check**. SaberDock scans AVP Play’s local game downloads and toolchain folders and locates the app, APK, OBB, and game data automatically. Signing settings are read from AVP Play. If a version is missing, download it and complete installation in AVP Play, then click **Refresh List**.
 2. Create at least two playlist folders and add at least one supported map to each. The default location is `~/Music/SaberDock Library`; the default headset app name is **SaberDock Custom Songs**. These defaults stay in English regardless of interface language. You can choose a different library location and app name.
 3. Keep the headset unlocked, select your Vision Pro, and click **Install**. SaberDock prepares and signs the separate app locally, then installs the app and required data on your headset.
 4. Open **SaberDock Custom Songs**, or the name you chose, on the headset.
@@ -84,7 +84,7 @@ Map errors identify the affected song. Resolve or remove unsupported maps before
 
 ## Game files and versions
 
-Game version names and internal version codes do not block installation. Missing files produce a specific error instead of permanently disabling Install. Choose files from the same local game installation. Versions are not all verified: if the selected files lack the resource structure needed by the converter, processing stops before the headset is changed. Selecting a different app or game data causes the next update to sync the complete selected program and library.
+Game version names and internal version codes do not block installation. Missing files produce a specific error instead of permanently disabling Install. The two dropdowns list locally available downloads and toolchains. If the selected combination has no generated game app or data, complete that game installation with the chosen toolchain in AVP Play first. Versions are not all verified: if the selected files lack the resource structure needed by the converter, processing stops before the headset is changed. Selecting a different app or game data causes the next update to sync the complete selected program and library.
 
 ## Supported maps
 

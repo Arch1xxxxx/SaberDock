@@ -53,7 +53,7 @@ SaberDock 会修改本地 Beat Saber 游戏资源，并复用 AVP Play 已经生
 
 ## 设置并安装到头显
 
-1. 打开 **Installation Settings（安装设置）**，选择本地的 **Vision Pro App（头显游戏应用 .app）**、**Game APK（游戏 APK）**、**Game OBB（游戏 OBB）** 和 **Game Data（游戏数据文件夹）**。应用应为给 Vision Pro 生成的游戏，不是 Mac 上的 AVP Play.app。游戏数据文件夹须包含 `assets` 和 `AndroidManifest.xml`，SaberDock 会尝试从所选应用旁自动定位。可选用自动查找，也可选择其他位置的文件。填写自己的 Apple 团队 ID，再点击 **Save and Check（保存并检查）**。团队 ID 可在 Xcode → Settings → Accounts 中查看。
+1. 打开 **Installation Settings（安装设置）**，在下拉框中选择 **Game Version（游戏版本）** 和 **Toolchain Version（Toolchain 版本）**，再点击 **Save and Check（保存并检查）**。SaberDock 扫描 AVP Play 本地的游戏下载目录和工具链目录，自动定位应用、APK、OBB 和游戏数据，并读取 AVP Play 的签名设置。若列表中缺少版本，请先在 AVP Play 下载并完成安装，再点击 **Refresh List（刷新列表）**。
 2. 创建至少两个歌单文件夹，每个文件夹放入至少一份受支持的谱面。默认曲库位置为 `~/Music/SaberDock Library`，默认头显应用名称为 **SaberDock Custom Songs**。无论界面选择哪种语言，这两个默认值都使用英文。可自行选择其他曲库位置和应用名称。
 3. 保持头显解锁，选择你的 Vision Pro，点击 **Install（安装）**。SaberDock 在本机准备并签名独立应用，再安装应用并传输必要数据。
 4. 在头显打开 **SaberDock Custom Songs**，或你自行设置的名称。
@@ -84,7 +84,7 @@ SaberDock 使用通过 AVP Play 从 Meta 下载的游戏文件和你自己的签
 
 ## 游戏文件与版本
 
-游戏版本名和内部版本编号不会阻止安装。缺少文件时会给出具体错误，安装按钮不会因自动识别失败而一直禁用。请选择同一次本地游戏安装中的文件。不限制版本不代表所有版本都已验证：如果所选文件缺少转换器需要的资源结构，会在修改头显前停止处理。更换游戏应用或程序数据后，下次更新会完整同步所选程序和曲库。
+游戏版本名和内部版本编号不会阻止安装。缺少文件时会给出具体错误，安装按钮不会因自动识别失败而一直禁用。两个下拉框列出本地已有的游戏下载和工具链。若所选组合缺少生成的游戏程序或数据，请先在 AVP Play 使用所选工具链完成该游戏版本的安装。不限制版本不代表所有版本都已验证：如果所选文件缺少转换器需要的资源结构，会在修改头显前停止处理。更换游戏应用或程序数据后，下次更新会完整同步所选程序和曲库。
 
 ## 谱面兼容范围
 

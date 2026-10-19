@@ -102,5 +102,9 @@
   "头显缺少所选游戏的程序数据，请先点击安装。": "The headset is missing the selected game's program data. Click Install first.",
   "找不到所选本地 OBB 文件，请在安装设置中重新选择。": "The selected local OBB file was not found. Select it again in Installation Settings.",
   "所选 OBB 中没有可处理的曲包资源。头显尚未修改。": "The selected OBB contains no usable song pack resources. The headset has not been changed.",
-  "本地游戏文件已更改，正在同步所选程序与曲库…": "Local game files changed. Syncing the selected program and library…"
+  "本地游戏文件已更改，正在同步所选程序与曲库…": "Local game files changed. Syncing the selected program and library…",
+  "未找到所选游戏版本，请先在 AVP Play 下载游戏，然后刷新列表。": "The selected game version was not found. Download it in AVP Play, then refresh the list.",
+  "未找到所选 Toolchain，请先在 AVP Play 下载工具链，然后刷新列表。": "The selected toolchain was not found. Download it in AVP Play, then refresh the list.",
+  "所选组合缺少对应的游戏程序或数据，请先在 AVP Play 使用此 Toolchain 完成该游戏版本的安装，然后刷新列表。": "The selected combination is missing its game app or data. Complete installation of this game version with this toolchain in AVP Play, then refresh the list.",
+  "未找到 Apple 开发签名设置，请先在 AVP Play 使用自己的 Apple 账户完成一次游戏安装。": "Apple development signing settings were not found. Complete a game installation in AVP Play using your own Apple account first."
 }

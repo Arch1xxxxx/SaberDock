@@ -3,7 +3,7 @@
 import argparse,hashlib,json,os,plistlib,shutil,subprocess,sys,tarfile,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
-BUILD=ROOT/'.build';DIST=ROOT/'dist';VERSION='1.0.3'
+BUILD=ROOT/'.build';DIST=ROOT/'dist';VERSION='1.0.4'
 def run(args,**kw):subprocess.run([str(x) for x in args],check=True,**kw)
 def download(item):
  target=BUILD/Path(item['url']).name
@@ -40,7 +40,7 @@ def main():
  for name in ['LICENSE','LICENSE.txt','LICENSE.rst','COPYING','COPYING.txt']:
   file=BUILD/'node'/name
   if file.exists():shutil.copy2(file,notices/('Node-'+name))
- info={'CFBundleIdentifier':'io.saberdock.mac','CFBundleName':'SaberDock','CFBundleDisplayName':'SaberDock','CFBundleExecutable':'SaberDock','CFBundlePackageType':'APPL','CFBundleShortVersionString':VERSION,'CFBundleVersion':'103','CFBundleDevelopmentRegion':'en','CFBundleLocalizations':['en','zh-Hans'],'LSApplicationCategoryType':'public.app-category.music','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'CFBundleIconFile':'AppIcon'}
+ info={'CFBundleIdentifier':'io.saberdock.mac','CFBundleName':'SaberDock','CFBundleDisplayName':'SaberDock','CFBundleExecutable':'SaberDock','CFBundlePackageType':'APPL','CFBundleShortVersionString':VERSION,'CFBundleVersion':'104','CFBundleDevelopmentRegion':'en','CFBundleLocalizations':['en','zh-Hans'],'LSApplicationCategoryType':'public.app-category.music','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'CFBundleIconFile':'AppIcon'}
  (app/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
  run(['/usr/bin/xcrun','swiftc','-swift-version','5','-parse-as-library','-O','-target','arm64-apple-macosx14.0','-module-cache-path',BUILD/'swift-cache','src/App.swift','-o',mac/'SaberDock'],cwd=ROOT)
  run(['/usr/bin/xcrun','swift',ROOT/'scripts/icon.swift',res/'AppIcon.icns'])

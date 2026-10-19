@@ -49,7 +49,7 @@ def infer_tree(app,info):
   if data_tree(candidate):return candidate
  return None
 
-def discover(base=None,app=None,store=None,*,runtime_app=None,apk=None,obb=None,tree=None):
+def _discover_files(base=None,app=None,store=None,*,runtime_app=None,apk=None,obb=None,tree=None):
  base=Path(base or Path.home()/'Library/Application Support/AVPPlay').expanduser().resolve()
  candidates=[Path(app).expanduser()] if app else [Path('/Applications/AVP Play.app'),Path.home()/'Applications/AVP Play.app']
  avp_app=next((p for p in candidates if p.is_dir()),None)
@@ -107,6 +107,86 @@ def discover(base=None,app=None,store=None,*,runtime_app=None,apk=None,obb=None,
          'obbName':selected_obb.name if selected_obb else '', 'toolchains':toolchains,'matched':matched,'team':team,
          'ready':not issues,'issues':issues,'version':metadata['name'],'versionName':metadata['name'],'versionCode':metadata['code']}
 
+def local_versions(base=None,store=None):
+ base=Path(base or Path.home()/'Library/Application Support/AVPPlay').expanduser().resolve()
+ settings=read(base/'settings.json',{})
+ store=Path(store or settings.get('store') or base/'store').expanduser().resolve()
+ jobs=[]
+ for path in (base/'jobs').glob('beatsaber*.json'):
+  try:jobs.append(read(path,{}))
+  except (ValueError,OSError):continue
+ jobs.sort(key=lambda j:j.get('updated',''),reverse=True)
+ chains=[];names={};team=''
+ for job in jobs:
+  request=job.get('request',{});recipe=job.get('recipe',{})
+  if not team:team=request.get('team','')
+  chain=Path(request.get('toolchain','/nonexistent')).expanduser().resolve()
+  if chain.is_dir() and chain not in chains:chains.append(chain)
+  code=recipe.get('versionCode')
+  if code is not None and recipe.get('versionName'):names.setdefault(str(code),recipe['versionName'])
+ for chain in sorted((base/'toolchains').glob('*'),key=lambda p:p.stat().st_mtime,reverse=True):
+  if chain.is_dir() and chain not in chains:chains.append(chain)
+ builds={}
+ for chain in chains:
+  builds[str(chain)]=[]
+  for built in sorted(chain.glob('visionos/build/dd-device-beatsaber*/Build/Products/*-xros/*.app'),key=lambda p:p.stat().st_mtime,reverse=True):
+   info=app_info(built)
+   if not info:continue
+   tree=infer_tree(built,info)
+   metadata=version_info(tree) if tree else {'name':'','code':None}
+   builds[str(chain)].append((built,info,tree,metadata))
+   if metadata['code'] is not None and metadata['name']:names.setdefault(str(metadata['code']),metadata['name'])
+ folders=sorted((p for p in store.glob('beatsaber*') if p.is_dir()),key=lambda p:p.stat().st_mtime,reverse=True)
+ if store.is_dir() and any(store.glob('*.apk')):folders.insert(0,store)
+ games=[]
+ for folder in folders:
+  apks=sorted(folder.glob('*.apk'));obbs=sorted(folder.glob('*.obb'))
+  if not apks and not obbs:continue
+  code=next((m[1] for p in obbs if (m:=re.match(r'main\.(\d+)\.',p.name))),None)
+  if code is None:
+   match=re.search(r'-(\d+)$',folder.name);code=match[1] if match else None
+  name=names.get(code,'')
+  games.append({'id':str(folder),'label':(name+' · '+code if name and code else folder.name),'code':code,
+                'apk':str(next((p for p in apks if p.name=='beat-saber.apk'),apks[0] if apks else '')),
+                'obbs':[str(p) for p in obbs],'name':name})
+ return base,store,games,[{'id':str(c),'label':c.name} for c in chains],builds,team
+
+def discover(base=None,app=None,store=None,*,game_version=None,toolchain_version=None,**files):
+ if any(files.values()):return _discover_files(base,app,store,**files)
+ base,store,games,chains,builds,team=local_versions(base,store)
+ if game_version:game_version=str(Path(game_version).expanduser().resolve())
+ if toolchain_version:toolchain_version=str(Path(toolchain_version).expanduser().resolve())
+ def compatible(game,record):
+  built,info,tree,metadata=record
+  return bool(tree and any(Path(o).name==info.get('KLObbFile') for o in game['obbs'])
+              and (metadata['code'] is None or game['code'] is None or str(metadata['code'])==game['code']))
+ chain=next((c for c in chains if c['id']==toolchain_version),None) if toolchain_version else next(iter(chains),None)
+ game=next((g for g in games if g['id']==game_version),None) if game_version else None
+ records=builds.get(chain['id'],[]) if chain else []
+ if game is None and not game_version:
+  game=next((g for g in games if any(compatible(g,r) for r in records)),next(iter(games),None))
+ record=next((r for r in records if game and compatible(game,r)),None)
+ if record:
+  built,info,tree,metadata=record
+  obb=next(o for o in game['obbs'] if Path(o).name==info.get('KLObbFile'))
+  env=_discover_files(base,app,store,runtime_app=built,apk=game['apk'] or '/nonexistent',obb=obb,tree=tree)
+ else:
+  candidates=[Path(app).expanduser()] if app else [Path('/Applications/AVP Play.app'),Path.home()/'Applications/AVP Play.app']
+  avp_app=next((p for p in candidates if p.is_dir()),None)
+  env={'avpRoot':str(base),'avpApp':str(avp_app) if avp_app else '', 'store':str(store),
+       'runtimeApp':'','gameTree':'','apk':game['apk'] if game else '',
+       'sourceObb':game['obbs'][0] if game and game['obbs'] else '', 'treeName':'beatsaber','apkName':'game.apk',
+       'obbName':Path(game['obbs'][0]).name if game and game['obbs'] else '', 'matched':None,
+       'version':game['name'] if game else '', 'versionName':game['name'] if game else '',
+       'versionCode':int(game['code']) if game and game['code'] else None, 'ready':False,'issues':[]}
+  if not game:env['issues'].append(tr('未找到所选游戏版本，请先在 AVP Play 下载游戏，然后刷新列表。'))
+  if not chain:env['issues'].append(tr('未找到所选 Toolchain，请先在 AVP Play 下载工具链，然后刷新列表。'))
+  if game and chain:env['issues'].append(tr('所选组合缺少对应的游戏程序或数据，请先在 AVP Play 使用此 Toolchain 完成该游戏版本的安装，然后刷新列表。'))
+ env.update(gameVersions=[{'id':g['id'],'label':g['label']} for g in games],toolchainVersions=chains,
+            selectedGame=game['id'] if game else '',selectedToolchain=chain['id'] if chain else '',
+            toolchains=[c['id'] for c in chains],team=team)
+ return env
+
 def validate_source(environment):
  if not environment['ready']:raise ValueError('\n'.join(environment['issues']))
  if not reusable_build(environment.get('matched')):raise ValueError(tr('请选择 AVP Play 已生成的游戏 visionOS 应用（.app），不是 Mac 上的 AVP Play.app。'))
@@ -144,7 +224,7 @@ def prepare(environment,support,resources,team,bundle,note,*,build_app=True):
 
 
 def provisioning(resources,support,team,bundle,device,note):
- if not re.fullmatch(r'[A-Z0-9]{10}',team):raise ValueError(tr('请输入自己的 10 位 Apple 开发团队 ID，或先在 AVP Play 完成签名设置。'))
+ if not re.fullmatch(r'[A-Z0-9]{10}',team):raise ValueError(tr('未找到 Apple 开发签名设置，请先在 AVP Play 使用自己的 Apple 账户完成一次游戏安装。'))
  support=Path(support);resources=Path(resources);folder=support/'signing'/bundle;project=folder/'LibrarySign.xcodeproj';project.mkdir(parents=True,exist_ok=True)
  path=folder/'Derived/Build/Products/Debug-xros/LibrarySign.app/embedded.mobileprovision'
  def parse():

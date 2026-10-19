@@ -36,7 +36,7 @@ The app is locally signed and is not notarized by Apple. If macOS blocks the fir
 ## Set up and install on your headset
 
 1. Open **Installation Settings**. Check the detected AVP Play app, data folder, downloads folder, and your Apple Team ID. You can choose paths manually. The team ID is also available in Xcode → Settings → Accounts.
-2. Add maps to your library. The default location is `~/Music/SaberDock Library`; the default headset app name is **SaberDock Custom Songs**. These defaults stay in English regardless of interface language. Existing library locations and custom names are retained.
+2. Add maps to your library. The default location is `~/Music/SaberDock Library`; the default headset app name is **SaberDock Custom Songs**. These defaults stay in English regardless of interface language. You can choose a different library location and app name.
 3. Keep the headset unlocked, select your Vision Pro, and click **Install / Repair**. SaberDock prepares and signs the separate app locally, then installs the app and required data on your headset.
 4. Open **SaberDock Custom Songs**, or the name you chose, on the headset.
 

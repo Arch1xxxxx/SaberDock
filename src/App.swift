@@ -88,6 +88,7 @@ final class LibraryModel: ObservableObject {
     func acceptLibrary(_ value: Any) {
         guard let data = try? JSONSerialization.data(withJSONObject: value), let lib = try? JSONDecoder().decode(Library.self, from: data) else { return }
         library = lib
+        if root != lib.root { root = lib.root; persist() }
         if !lib.playlists.contains(where: { $0.path == selected }) { selected = lib.playlists.first?.path }
     }
     func refresh(quiet: Bool = false) {

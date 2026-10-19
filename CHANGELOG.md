@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Preserve the game pack registry when building a single custom playlist; hide unused packs and remove their original playable songs without breaking menu initialization.
+- Migrate the legacy default library folder to an English path while preserving playlist order and deleted-song recovery records. Existing destination folders are never overwritten.
+
 ## 0.2.0
 
 - English is the default interface, with a persistent Simplified Chinese language option.

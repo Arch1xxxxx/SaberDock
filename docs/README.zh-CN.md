@@ -36,7 +36,7 @@
 ## 设置并安装到头显
 
 1. 打开 **Installation Settings（安装设置）**，核对自动检测的 AVP Play 应用、数据目录、下载目录和你自己的 Apple 团队 ID，也可手动选择。团队 ID 还可在 Xcode → Settings → Accounts 中查看。
-2. 添加谱面。默认曲库位置为 `~/Music/SaberDock Library`，默认头显应用名称为 **SaberDock Custom Songs**。无论界面选择哪种语言，这两个默认值都使用英文。已有曲库位置和自定义名称会保留。
+2. 添加谱面。默认曲库位置为 `~/Music/SaberDock Library`，默认头显应用名称为 **SaberDock Custom Songs**。无论界面选择哪种语言，这两个默认值都使用英文。可自行选择其他曲库位置和应用名称。
 3. 保持头显解锁，选择你的 Vision Pro，点击 **Install / Repair（首次安装 / 修复）**。SaberDock 在本机准备并签名独立应用，再安装应用并传输必要数据。
 4. 在头显打开 **SaberDock Custom Songs**，或你自行设置的名称。
 

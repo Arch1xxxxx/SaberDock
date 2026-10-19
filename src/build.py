@@ -1,5 +1,22 @@
 from i18n import tr
 import sys,json
+def pack_definition_rows(catalog):
+    import base64,struct
+    keys=base64.b64decode(catalog['m_KeyDataString'])
+    buckets=base64.b64decode(catalog['m_BucketDataString']);pos=4
+    for _ in range(struct.unpack_from('<i',buckets)[0]):
+        offset,count=struct.unpack_from('<2i',buckets,pos);pos+=8
+        rows=tuple(struct.unpack_from(f'<{count}i',buckets,pos));pos+=count*4
+        if keys[offset] not in [0,1]:continue
+        length=struct.unpack_from('<i',keys,offset+1)[0]
+        key=keys[offset+5:offset+5+length].decode('utf-8' if keys[offset]==0 else 'utf-16le')
+        if key=='PackDefinition':return rows
+    raise ValueError('The game catalog is missing its pack registry')
+
+def verify_pack_registry(original,current):
+    if pack_definition_rows(original)!=pack_definition_rows(current):
+        raise ValueError('The game pack registry must be preserved for menu initialization')
+
 def main():
     from pathlib import Path
     import ctypes,base64,copy,gzip,hashlib,json,struct,zipfile,zlib,shutil
@@ -192,6 +209,27 @@ def main():
         for ident,expected,label in state['covers']:assert co[ident].read().image.convert('RGBA').tobytes()==expected.tobytes(),label+tr('：封面回读不一致')
         assert next(o.read_typetree() for o in checked.objects if o.type.name=='MonoBehaviour' and '_beatmapLevels' in o.read_typetree())['_beatmapLevels']==refs
     
+    # Keep the game's complete pack registry for SongPackMasksModel. Removing
+    # definitions makes built-in aggregate masks collide with a lone playlist.
+    # Unused definitions stay hidden and contain no playable original levels.
+    for path in archive.namelist():
+        if '_pack_assets_all_' not in path or '/debug_' in path or path in patch:
+            continue
+        env=UnityPy.load(archive.read(path))
+        for obj in env.objects:
+            if obj.type.name!='MonoBehaviour':continue
+            data=obj.read_typetree()
+            if '_beatmapLevels' in data:
+                data['_beatmapLevels']=[];obj.save_typetree(data)
+            elif '_beatmapLevelPack' in data and '_order' in data:
+                data['_tags']=0;obj.save_typetree(data)
+        checked=write_bundle(env,path)
+        for obj in checked.objects:
+            if obj.type.name!='MonoBehaviour':continue
+            data=obj.read_typetree()
+            if '_beatmapLevels' in data:assert not data['_beatmapLevels']
+            if '_beatmapLevelPack' in data and '_order' in data:assert data['_tags']==0
+
     catalog=json.loads(archive.read('assets/aa/catalog.json'));entries=bytearray(base64.b64decode(catalog['m_EntryDataString']));extra=bytearray(base64.b64decode(catalog['m_ExtraDataString']));rows=struct.unpack_from('<I',entries)[0]
     for path,v in list(patch.items()):
         if not path.endswith('.bundle'):continue
@@ -211,14 +249,11 @@ def main():
     for i in range(count):
         off,num=struct.unpack_from('<2i',buckets,pos);pos+=8;locs=list(struct.unpack_from(f'<{num}i',buckets,pos));pos+=4*num;tag=keys[off];key=None
         if tag in [0,1]:length=struct.unpack_from('<i',keys,off+1)[0];key=keys[off+5:off+5+length].decode('utf-8' if tag==0 else 'utf-16le')
-        if key=='PackDefinition':
-            def belongs(loc):
-                internal=catalog['m_InternalIds'][struct.unpack_from('<i',entries,4+28*loc)[0]].lower()
-                return any('/'+Path(s['path']).name in internal or f'packs.{pack_prefixes.get(p,p)}/' in internal or ('packdefinition' in internal and p.replace('_','') in internal.replace('-','').replace('_','')) for p,s in packs.items())
-            locs=[loc for loc in locs if belongs(loc)];pack_rows=locs;assert len(locs)==len(packs),(len(locs),list(packs))
+        if key=='PackDefinition':pack_rows=locs
         new+=struct.pack('<2i',off,len(locs))+(struct.pack(f'<{len(locs)}i',*locs) if locs else b'')
-    assert pack_rows and pos==len(buckets);catalog['m_BucketDataString']=base64.b64encode(new).decode();cat=json.dumps(catalog,separators=(',',':')).encode();(OUT/'assets/aa/catalog.json').write_bytes(cat);patch['assets/aa/catalog.json']={'patchedSha256':hashlib.sha256(cat).hexdigest(),'bytes':len(cat)}
-    report.update(patches=patch,playlists=[{'name':s['name'],'songs':len(s['levels'])} for s in packs.values()],checks=['core beatmap round-trip','FSB PCM byte comparison','audio peaks below -3 dBFS','cover pixels after serialization','unique bundle names per song','addressable CRC and pack count','original playable songs removed'])
+    assert len(pack_rows)>=len(packs) and pos==len(buckets);catalog['m_BucketDataString']=base64.b64encode(new).decode();cat=json.dumps(catalog,separators=(',',':')).encode();(OUT/'assets/aa/catalog.json').write_bytes(cat);patch['assets/aa/catalog.json']={'patchedSha256':hashlib.sha256(cat).hexdigest(),'bytes':len(cat)}
+    verify_pack_registry(json.loads(archive.read('assets/aa/catalog.json')),catalog)
+    report.update(patches=patch,playlists=[{'name':s['name'],'songs':len(s['levels'])} for s in packs.values()],checks=['core beatmap round-trip','FSB PCM byte comparison','audio peaks below -3 dBFS','cover pixels after serialization','unique bundle names per song','addressable CRC and complete pack registry','original playable songs removed'])
     progress(tr('正在生成头显曲库文件…'))
     out=BASE/'main.1716.com.beatgames.beatsaber.obb'
     with zipfile.ZipFile(out,'w',allowZip64=True) as z:

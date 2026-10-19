@@ -141,8 +141,31 @@ def safe_name(s):
  if not name or name in ['.','..'] or '/' in name or '\0' in name:raise ValueError(tr('请输入有效的文件夹名称'))
  return name
 
+def migrate_legacy_root(root):
+ root=Path(root).expanduser().resolve()
+ legacy=(Path.home()/'Music/Beat Saber 曲库').resolve()
+ if root!=legacy or not root.is_dir():return root
+ destination=Path.home()/'Music/SaberDock Library';number=2
+ while destination.exists():
+  destination=Path.home()/f'Music/SaberDock Library ({number})';number+=1
+ state_path=state_file(root);original=state_path.read_bytes() if state_path.exists() else None
+ def rewrite(value):
+  if isinstance(value,str):
+   return str(destination)+value[len(str(root)):] if value==str(root) or value.startswith(str(root)+'/') else value
+  if isinstance(value,list):return [rewrite(v) for v in value]
+  if isinstance(value,dict):return {k:rewrite(v) for k,v in value.items()}
+  return value
+ updated=rewrite(json.loads(original)) if original is not None else None
+ root.rename(destination)
+ try:
+  if updated is not None:atomic(state_file(destination),updated)
+ except Exception:
+  if original is not None:state_file(destination).write_bytes(original)
+  destination.rename(root);raise
+ return destination
+
 def init(root):
- root=Path(root).expanduser();root.mkdir(parents=True,exist_ok=True)
+ root=migrate_legacy_root(root);root.mkdir(parents=True,exist_ok=True)
  if not any(root.iterdir()):
   for name in ['Vol.1','Vol.2']:(root/name).mkdir(exist_ok=True)
  return scan(root)

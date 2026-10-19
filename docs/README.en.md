@@ -2,9 +2,11 @@
 
 # SaberDock
 
-A Mac app for organizing custom Beat Saber maps and updating a separate custom-content app on Apple Vision Pro, using game files you downloaded from Meta through AVP Play.
+SaberDock is a Mac companion for organizing custom Beat Saber maps and syncing your playlists to Apple Vision Pro. It is intended for playing custom content for a game you have purchased, on a headset you own.
 
-**SaberDock does not include or distribute any game, APK, OBB, paid music pack, or game-derived runtime. It is a companion tool for playing custom content for games you already own on devices you already own. You must install AVP Play first and use it to download your owned Beat Saber game files from Meta with your own account. SaberDock reads those files locally.**
+Start with [AVP Play](https://github.com/myMartek/avp-play): install it, connect the Meta account that owns Beat Saber, and prepare your purchased game for Vision Pro. AVP Play's [account and ownership guidance](https://github.com/myMartek/avp-play#your-accounts-and-your-data) explains that it checks purchases with Meta and obtains only the game files confirmed for that account. Those files come from Meta, not from SaberDock or AVP Play's project repository.
+
+SaberDock then works with that existing local installation to organize maps and prepare a separate custom-content app. It does not sign in to Meta or download games. Neither SaberDock nor AVP Play distributes game copies or provides access to games or paid packs you have not purchased.
 
 **Before installing or updating, add at least two playlists, each containing at least one supported map. The headset app currently cannot reach the main menu with only one playlist; empty folders do not count. Keep at least two nonempty playlists when reorganizing or deleting songs.**
 
@@ -20,7 +22,7 @@ A Mac app for organizing custom Beat Saber maps and updating a separate custom-c
 ## Requirements
 
 - An Apple Silicon Mac running macOS 14 or later.
-- **Install [AVP Play](https://github.com/myMartek/avp-play) first**, set up its local toolchain, and use your own Meta account in AVP Play to download your owned **Beat Saber 1.40.8 / version code 1716** files (APK and OBB) from Meta. Other versions, including 1.45, are not supported.
+- **Install and configure [AVP Play](https://github.com/myMartek/avp-play) first.** Use the Meta account that owns Beat Saber to prepare **Beat Saber 1.40.8 / version code 1716** and its local toolchain through AVP Play. Other versions, including 1.45, are not supported.
 - Xcode with a visionOS SDK compatible with your AVP Play toolchain, signed in to your own Apple development account. Complete an AVP Play installation first.
 - Your Apple Vision Pro paired with Xcode, with Developer Mode enabled, unlocked, and connected to the same network as the Mac.
 - Free space for local processing and the generated library.
@@ -32,7 +34,7 @@ A Quest headset is not required. SaberDock does not sign in to Meta, download ga
 **AVP Play must be installed and set up before you use SaberDock.**
 
 1. Install [AVP Play](https://github.com/myMartek/avp-play) on your Mac and follow its setup guide.
-2. Use your own Meta account in AVP Play to download your owned **Beat Saber 1.40.8 (1716)** game files from Meta.
+2. In AVP Play, connect the Meta account that owns **Beat Saber 1.40.8 (1716)**. Follow AVP Play's guide to verify your purchase and prepare the game files supplied by Meta.
 3. Complete a game installation with AVP Play and confirm it can launch on your Vision Pro. Then install SaberDock below.
 
 ## Install SaberDock on your Mac
@@ -103,10 +105,22 @@ The build downloads checksum-pinned portable Python and Node runtimes and locked
 
 Created by [Arch1xxxxx](https://github.com/Arch1xxxxx) and Codex (AI coding assistant).
 
-## Ownership, trademarks, and license
+## Acknowledgments
 
-Thanks to [AVP Play](https://github.com/myMartek/avp-play), [Klepton](https://github.com/shinyquagsire23/Klepton), UnityPy, and bsmap.
+Thank you to [AVP Play](https://github.com/myMartek/avp-play) and its contributors for the installation workflow on which SaberDock relies, and to Max Thomas for [Klepton](https://github.com/shinyquagsire23/Klepton), the foundation of the game translation toolchain.
 
-SaberDock is an independent community tool and is not affiliated with, endorsed by, or sponsored by Meta, Beat Games, Apple, AVP Play, or Klepton. **All trademarks, product names, logos, and other marks mentioned belong to their respective owners.** The names identify compatible products and dependencies; no ownership of those marks is claimed.
+Thank you to UnityPy and bsmap for the tools used to read game resource formats and work with beatmaps. For the contributors and projects behind AVP Play's toolchain, see its own [acknowledgments](https://github.com/myMartek/avp-play#thanks). These credits recognize upstream work; they do not imply endorsement of SaberDock. AVP Play's own scope and conditions are set out in its [legal notice](https://github.com/myMartek/avp-play#legal).
 
-The source is licensed under the [MIT License](../LICENSE). See [third-party notices](../THIRD-PARTY.md) for dependency licenses.
+## Use, ownership, and legal notice
+
+SaberDock is for managing custom content for a copy of Beat Saber you have purchased, on hardware you own. It supplies no game APKs, OBBs, paid music packs, game-derived runtimes, or commercial songs. It does not provide game cracks, purchase-check bypasses, or a way to unlock unpurchased content. Purchase verification and access to your game files remain part of the Meta and AVP Play workflow described above; SaberDock does not perform its own Meta account verification.
+
+Buying a game does not grant permission to redistribute its files. Game code, music, maps, artwork, and other content remain subject to their owners' rights. Import custom maps and other content only when you have permission to use them. SaberDock's source-code license does not grant rights to any game or third-party content.
+
+You are responsible for checking whether your intended use complies with applicable law and the terms of the relevant games, stores, and developer services. This project does not promise that every use of a purchased game on another device is permitted by those terms.
+
+SaberDock is an independent community project. It is not affiliated with, endorsed by, or sponsored by Apple, Meta, Beat Games, AVP Play, or Klepton. Apple Vision Pro, Meta Quest, Beat Saber, and all other product names, logos, and trademarks mentioned belong to their respective owners. They are used only to identify compatible products and acknowledge dependencies.
+
+## License
+
+SaberDock's source code is available under the [MIT License](../LICENSE), including its warranty disclaimer. Dependency licenses and notices are listed in [THIRD-PARTY.md](../THIRD-PARTY.md). This license covers the project code, not the game or content you provide.

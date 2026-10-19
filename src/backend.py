@@ -269,10 +269,12 @@ def prune_build_cache(current):
   for p in folder.iterdir():
    if p.is_dir() and p.resolve() not in protected:shutil.rmtree(p,ignore_errors=True)
 
+def obb_name():return integration.resource_name(ENVIRONMENT)
+
 def library_signature(library):
  source=SOURCE.stat()
  groups=[g for g in library['playlists'] if g['songs']] or [{'name':library['playlists'][0]['name'] if library['playlists'] else 'Custom Songs','songs':[]}]
- data={'source':[source.st_size,source.st_mtime_ns],'groups':[[g['name'],[[s['contentKey'],s['levelId']] for s in g['songs']]] for g in groups],'scripts':[hashlib.sha256((RES/n).read_bytes()).hexdigest() for n in ['build.py','convert.cjs']]}
+ data={'source':[str(SOURCE),obb_name(),source.st_size,source.st_mtime_ns],'groups':[[g['name'],[[s['contentKey'],s['levelId']] for s in g['songs']]] for g in groups],'scripts':[hashlib.sha256((RES/n).read_bytes()).hexdigest() for n in ['build.py','convert.cjs']]}
  return hashlib.sha256(json.dumps(data,ensure_ascii=False).encode()).hexdigest()
 
 def build(root,job):
@@ -281,7 +283,7 @@ def build(root,job):
  groups=[g for g in library['playlists'] if g['songs']]
  if not groups:groups=[{'name':library['playlists'][0]['name'] if library['playlists'] else 'Custom Songs','songs':[]}]
  keys=pack_keys();signature=library_signature(library);previous=read_json(SUPPORT/'latest.json',{})
- previous_job=Path(previous.get('job','/nonexistent'));previous_obb=previous_job/'main.1716.com.beatgames.beatsaber.obb'
+ previous_job=Path(previous.get('job','/nonexistent'));previous_obb=previous_job/obb_name()
  if previous.get('signature')==signature and previous_obb.is_file() and (previous_job/'verification.json').is_file():
   note(tr('曲库未改变，复用上次生成的曲库…'));job.mkdir(parents=True,exist_ok=True)
   if job.resolve()!=previous_job.resolve():
@@ -292,17 +294,17 @@ def build(root,job):
  cfg=[]
  for key,group in zip(keys,groups):
   for song in group['songs']:cfg.append({'folder':song['folder'],'infoPath':song['infoPath'],'slot':song['levelId'].lower(),'levelId':song['levelId'],'pack':key,'playlistName':group['name'],'contentKey':song['contentKey'],'label':song['title']+' ['+song['mapper']+']'})
- job.mkdir(parents=True,exist_ok=True);atomic(job/'config.json',cfg);atomic(job/'job.json',{'sourceObb':str(SOURCE),'cache':str(SUPPORT/'song-cache-v2'),'sourceStamp':[SOURCE.stat().st_size,SOURCE.stat().st_mtime_ns],'playlists':[{'pack':k,'name':g['name']} for k,g in zip(keys,groups)]})
+ job.mkdir(parents=True,exist_ok=True);atomic(job/'config.json',cfg);atomic(job/'job.json',{'sourceObb':str(SOURCE),'obbName':obb_name(),'cache':str(SUPPORT/'song-cache-v2'),'sourceStamp':[SOURCE.stat().st_size,SOURCE.stat().st_mtime_ns],'playlists':[{'pack':k,'name':g['name']} for k,g in zip(keys,groups)]})
  note(tr('开始处理 ')+str(library['uniqueSongs'])+tr(' 份谱面、')+str(len(groups))+tr(' 个曲包'))
  node=RES/'runtime/bin/node';node=node if node.exists() else Path(shutil.which('node') or '/nonexistent')
  try:
   stream([node,RES/'convert.cjs',job]);stream([sys.executable,RES/'build.py',job])
  except Exception:
-  shutil.rmtree(job/'payload',ignore_errors=True);(job/'main.1716.com.beatgames.beatsaber.obb').unlink(missing_ok=True);raise
+  shutil.rmtree(job/'payload',ignore_errors=True);(job/obb_name()).unlink(missing_ok=True);raise
  shutil.rmtree(job/'payload',ignore_errors=True);atomic(SUPPORT/'latest.json',{'job':str(job),'root':str(root),'builtAt':time.time(),'signature':signature});return read_json(job/'verification.json')
 
 def send_resource(device,file):
- run(['/usr/bin/xcrun','devicectl','device','copy','to','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source',file,'--destination','Documents/android-files/obb/main.1716.com.beatgames.beatsaber.obb','--timeout','900'],timeout=910)
+ run(['/usr/bin/xcrun','devicectl','device','copy','to','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source',file,'--destination','Documents/android-files/obb/'+Path(file).name,'--timeout','900'],timeout=910)
 
 def sign_app(name,job):
  name=name.strip()
@@ -311,7 +313,7 @@ def sign_app(name,job):
  target=job/'Klepton.app';shutil.rmtree(target,ignore_errors=True)
  run(['/usr/bin/ditto',runtime['app'],target])
  info=target/'Info.plist';d=plistlib.loads(info.read_bytes())
- d.update(CFBundleIdentifier=BUNDLE,CFBundleDisplayName=name,CFBundleName=name,CFBundleVersion=str(int(time.time())),KLApkName='beatsaber-1.40.apk',KLTree='beatsaber140',KLObbFile=integration.OBB_NAME,KLStartScreen='1',KLTestBuild='0',KLAutoBootDefault='1',KLMetaApkID='',KLMetaObbID='')
+ d.update(CFBundleIdentifier=BUNDLE,CFBundleDisplayName=name,CFBundleName=name,CFBundleVersion=str(int(time.time())),KLApkName='beatsaber-1.40.apk',KLTree='beatsaber140',KLObbFile=obb_name(),KLStartScreen='1',KLTestBuild='0',KLAutoBootDefault='1',KLMetaApkID='',KLMetaObbID='')
  info.write_bytes(plistlib.dumps(d))
  profile,identity,profile_file=integration.provisioning(RES,SUPPORT,TEAM,BUNDLE,DEVICE,note)
  shutil.copy2(profile_file,target/'embedded.mobileprovision')
@@ -352,11 +354,11 @@ def install(root,name,device):
   if not source.exists():raise ValueError(tr('缺少首次安装文件：')+str(source))
   note(tr('正在传输首次运行文件：')+source.name)
   run(['/usr/bin/xcrun','devicectl','device','copy','to','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source',source,'--destination',destination,'--timeout','900'],timeout=910)
- note(tr('正在传输自定义曲库…'));send_resource(device,job/integration.OBB_NAME)
+ note(tr('正在传输自定义曲库…'));send_resource(device,job/obb_name())
  listing=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents/android-files/obb'])
- remote=next(f for f in listing['result']['files'] if f['name']==integration.OBB_NAME)
+ remote=next(f for f in listing['result']['files'] if f['name']==obb_name())
  if remote['metadata']['size']!=report['resourceBytes']:raise RuntimeError(tr('头显曲库资源大小不匹配，请点击安装重试'))
- atomic(SUPPORT/'latest-success.json',{'resource':str(job/integration.OBB_NAME),'bundle':BUNDLE,'name':name,'device':device,'signature':library_signature(scan(root)),'sha256':report['resourceSha256'],'resourceBytes':report['resourceBytes']})
+ atomic(SUPPORT/'latest-success.json',{'resource':str(job/obb_name()),'bundle':BUNDLE,'name':name,'device':device,'signature':library_signature(scan(root)),'sha256':report['resourceSha256'],'resourceBytes':report['resourceBytes']})
  same=True
  if backup:
   run(['/usr/bin/xcrun','devicectl','device','copy','from','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source','Documents/android-files/files/PlayerData.dat','--destination',backup/'PlayerData-after.dat','--timeout','45'],timeout=55)
@@ -374,7 +376,7 @@ def update(root,name,device,rename_only=False):
   signature=library_signature(library);previous=read_json(SUPPORT/'latest-success.json',{})
   if previous.get('signature')==signature and previous.get('device')==device and previous.get('bundle')==BUNDLE:
    files=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents/android-files/obb'])
-   remote=next((f for f in files.get('result',{}).get('files',[]) if f['name']=='main.1716.com.beatgames.beatsaber.obb'),{})
+   remote=next((f for f in files.get('result',{}).get('files',[]) if f['name']==obb_name()),{})
    if remote.get('metadata',{}).get('size')==previous.get('resourceBytes'):
     if previous.get('name')==name:
      note(tr('头显曲库已经是最新，无需重新处理或传输。'));return {'noChanges':True,'scoresUnchanged':True,'launchSucceeded':True}
@@ -390,11 +392,11 @@ def update(root,name,device,rename_only=False):
  note(tr('正在更新头显应用名称…'));run(['/usr/bin/xcrun','devicectl','device','install','app','--device',device,'--timeout','90',app],timeout=100)
  if not rename_only:
   note(tr('正在传输曲库，可能需要几分钟，请保持头显解锁…'))
-  try:send_resource(device,job/'main.1716.com.beatgames.beatsaber.obb')
+  try:send_resource(device,job/obb_name())
   except Exception as e:
    previous=read_json(SUPPORT/'latest-success.json',{})
    previous_file=Path(previous.get('resource','/nonexistent'))
-   if previous.get('bundle')==BUNDLE and previous_file.is_file():
+   if previous.get('bundle')==BUNDLE and previous_file.name==obb_name() and previous_file.is_file():
     try:
      note(tr('本次传输未完成，正在恢复上次曲库…'));send_resource(device,previous_file)
      raise RuntimeError(tr('本次更新未完成，已恢复上次曲库。请保持头显解锁后重试。\n')+str(e))
@@ -403,7 +405,7 @@ def update(root,name,device,rename_only=False):
      raise RuntimeError(tr('连接中断，恢复暂未完成。请解锁头显后重新更新曲库；本地上次曲库和成绩备份仍在。\n')+str(e))
    raise
   files=devicectl(['device','info','files','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--subdirectory','Documents/android-files/obb'])
-  remote=next(f for f in files['result']['files'] if f['name']=='main.1716.com.beatgames.beatsaber.obb');assert remote['metadata']['size']==report['resourceBytes'],tr('头显资源大小不匹配')
+  remote=next(f for f in files['result']['files'] if f['name']==obb_name());assert remote['metadata']['size']==report['resourceBytes'],tr('头显资源大小不匹配')
  run(['/usr/bin/xcrun','devicectl','device','copy','from','--device',device,'--domain-type','appDataContainer','--domain-identifier',BUNDLE,'--source','Documents/android-files/files/PlayerData.dat','--destination',backup/'PlayerData-after.dat','--timeout','40'],timeout=50)
  same=(backup/'PlayerData.dat').read_bytes()==(backup/'PlayerData-after.dat').read_bytes()
  launch_ok=True
@@ -412,7 +414,7 @@ def update(root,name,device,rename_only=False):
  except Exception:launch_ok=False
  result={'name':name,'device':device,'job':str(job),'backup':str(backup),'scoresUnchanged':same,'launchSucceeded':launch_ok,'report':report}
  atomic(job/'deployment.json',result)
- if not rename_only:atomic(SUPPORT/'latest-success.json',{'resource':str(job/'main.1716.com.beatgames.beatsaber.obb'),'bundle':BUNDLE,'name':name,'sha256':report['resourceSha256'],'signature':signature,'device':device,'resourceBytes':report['resourceBytes']})
+ if not rename_only:atomic(SUPPORT/'latest-success.json',{'resource':str(job/obb_name()),'bundle':BUNDLE,'name':name,'sha256':report['resourceSha256'],'signature':signature,'device':device,'resourceBytes':report['resourceBytes']})
  else:
   previous=read_json(SUPPORT/'latest-success.json',{})
   if previous and previous.get('device')==device and previous.get('bundle')==BUNDLE:previous['name']=name;atomic(SUPPORT/'latest-success.json',previous)

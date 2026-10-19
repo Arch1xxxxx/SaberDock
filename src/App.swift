@@ -123,7 +123,7 @@ final class LibraryModel: ObservableObject {
     }
     func selectEnvironmentPath(_ kind: String) {
         let panel = NSOpenPanel(); panel.canChooseFiles = kind == "app"; panel.canChooseDirectories = kind != "app"
-        panel.message = kind == "app" ? L("Select AVP Play.app", "选择 AVP Play.app") : (kind == "store" ? L("Select the AVP Play downloads folder (containing beatsaber140-1716)", "选择 AVP Play 下载目录（含 beatsaber140-1716）") : L("Select the AVPPlay data folder (containing toolchains and jobs)", "选择 AVPPlay 数据目录（含 toolchains 与 jobs）"))
+        panel.message = kind == "app" ? L("Select AVP Play.app", "选择 AVP Play.app") : (kind == "store" ? L("Select the AVP Play downloads folder (containing the Beat Saber 1.40.8 download)", "选择 AVP Play 下载目录（含 Beat Saber 1.40.8 下载）") : L("Select the AVPPlay data folder (containing toolchains and jobs)", "选择 AVPPlay 数据目录（含 toolchains 与 jobs）"))
         if panel.runModal() == .OK, let url = panel.url {
             if kind == "app" { avpApp = url.path } else if kind == "store" { store = url.path } else { avpRoot = url.path }
         }
@@ -435,7 +435,7 @@ struct ContentView: View {
                 ForEach(model.environment?.issues ?? [], id: \.self) { Text($0).font(.callout).foregroundStyle(.orange).textSelection(.enabled) }
                 HStack { Text(L("AVP Play App", "AVP Play 应用")).frame(width: 110, alignment: .leading); TextField("AVP Play.app", text: $model.avpApp); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("app") } }
                 HStack { Text(L("AVP Play Data", "AVP Play 数据")).frame(width: 110, alignment: .leading); TextField(L("Folder containing toolchains and jobs", "含 toolchains 与 jobs 的目录"), text: $model.avpRoot); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("data") } }
-                HStack { Text(L("Game Downloads", "游戏下载目录")).frame(width: 110, alignment: .leading); TextField(L("Folder containing beatsaber140-1716", "含 beatsaber140-1716 的目录"), text: $model.store); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("store") } }
+                HStack { Text(L("Game Downloads", "游戏下载目录")).frame(width: 110, alignment: .leading); TextField(L("Folder containing the Beat Saber 1.40.8 download", "含 Beat Saber 1.40.8 下载 的目录"), text: $model.store); Button(L("Choose…", "选择…")) { model.selectEnvironmentPath("store") } }
                 HStack { Text(L("Apple Team ID", "Apple 团队 ID")).frame(width: 110, alignment: .leading); TextField(L("Your own 10-character team ID", "自己的 10 位团队 ID"), text: $model.team) }
                 Text(L("Your team ID can be read from recent AVP Play installations or checked in Xcode → Settings → Accounts. Requires Xcode, a visionOS SDK, Developer Mode, and a paired Vision Pro.", "团队 ID 可从 AVP Play 最近的安装记录自动读取；也可在 Xcode → Settings → Accounts 中确认。需要 Xcode、visionOS SDK、开发者模式和已配对的 Vision Pro。")).font(.caption).foregroundStyle(.secondary)
                 HStack { Button(L("Open AVP Play", "打开 AVP Play")) { if !model.avpApp.isEmpty { NSWorkspace.shared.open(URL(fileURLWithPath: model.avpApp)) } }; Spacer(); Button(L("Close", "关闭")) { model.setupOpen = false }; Button(L("Save and Check", "保存并检查")) { model.saveEnvironment() }.buttonStyle(.borderedProminent) }

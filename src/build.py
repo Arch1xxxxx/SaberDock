@@ -255,7 +255,7 @@ def main():
     verify_pack_registry(json.loads(archive.read('assets/aa/catalog.json')),catalog)
     report.update(patches=patch,playlists=[{'name':s['name'],'songs':len(s['levels'])} for s in packs.values()],checks=['core beatmap round-trip','FSB PCM byte comparison','audio peaks below -3 dBFS','cover pixels after serialization','unique bundle names per song','addressable CRC and complete pack registry','original playable songs removed'])
     progress(tr('正在生成头显曲库文件…'))
-    out=BASE/'main.1716.com.beatgames.beatsaber.obb'
+    out=BASE/SETTINGS['obbName']
     with zipfile.ZipFile(out,'w',allowZip64=True) as z:
         for info in archive.infolist():
             if info.filename.startswith('assets/BeatmapLevelsData/'):continue

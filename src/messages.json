@@ -55,9 +55,7 @@
   "正在读取 AVP Play 已下载的 1.40.8 文件…": "Reading AVP Play's local 1.40.8 files…",
   "正在通过本机 Xcode 账户生成你的开发签名…": "Creating your development signature using the local Xcode account…",
   "找不到 AVP Play.app，请先安装 AVP Play 或手动选择其应用文件。": "AVP Play.app was not found. Install AVP Play or select the app manually.",
-  "未找到 Beat Saber 1.40.8（1716）的完整下载。请先在 AVP Play 下载该版本；当前通用版暂不支持 1.45。": "The complete Beat Saber 1.40.8 (1716) download was not found. Download this version in AVP Play first. Version 1.45 is not supported.",
   "找不到 AVP Play 工具链，请先用 AVP Play 完成一次游戏安装。": "AVP Play toolchain not found. Complete a game installation in AVP Play first.",
-  "APK 版本不匹配，需要 1.40.8（1716）。": "APK version mismatch. Beat Saber 1.40.8 (1716) is required.",
   "已复用 AVP Play 的 1.40.8 应用构建。": "Reused AVP Play's 1.40.8 app build.",
   "请输入自己的 10 位 Apple 开发团队 ID，或先在 AVP Play 完成签名设置。": "Enter your own 10-character Apple development team ID or configure signing in AVP Play first.",
   "AVP Play 中的 APK 不完整或不是 ARM64 Beat Saber。": "The APK in AVP Play is incomplete or is not an ARM64 Beat Saber APK.",
@@ -97,5 +95,10 @@
   "仅支持 Standard（标准双剑）谱面": "Only Standard two-saber maps are supported",
   "复用已校验谱面：": "Reusing verified map: ",
   "头显曲库资源大小不匹配，请点击安装重试": "Headset library size mismatch. Click Install to try again",
-  "未找到 AVP Play 已生成的 Beat Saber 1.40.8（1716）应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。": "AVP Play's completed Beat Saber 1.40.8 (1716) app was not found. Download this version and complete its installation in AVP Play first. Confirm it launches on Vision Pro, then return to SaberDock."
+  "未找到 Beat Saber 1.40.8的完整下载。请先在 AVP Play 下载该版本；当前通用版暂不支持 1.45。": "The complete Beat Saber 1.40.8 download was not found. Download this version in AVP Play first. Version 1.45 is not supported.",
+  "APK 版本不匹配，需要 1.40.8。": "APK version mismatch. Beat Saber 1.40.8 is required.",
+  "未找到 Beat Saber 1.40.8 的匹配下载。请先在 AVP Play 下载并完成该版本安装；当前通用版暂不支持 1.45。": "Matching Beat Saber 1.40.8 files were not found. Download and complete this version's installation in AVP Play first. Version 1.45 is not supported.",
+  "APK 与 AVP Play 的 1.40.8 应用构建不匹配，请在 AVP Play 完成对应版本安装。": "The APK does not match AVP Play's 1.40.8 app build. Complete the matching version's installation in AVP Play first.",
+  "无法确定对应的 OBB 文件，请先在 AVP Play 完成 Beat Saber 1.40.8 的安装。": "The matching OBB file could not be identified. Complete the Beat Saber 1.40.8 installation in AVP Play first.",
+  "未找到 AVP Play 已生成的 Beat Saber 1.40.8 应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。": "AVP Play's completed Beat Saber 1.40.8 app was not found. Download this version and complete its installation in AVP Play first. Confirm it launches on Vision Pro, then return to SaberDock."
 }

@@ -28,7 +28,7 @@ Using SaberDock may conflict with these restrictions or other applicable store a
 ## Requirements
 
 - An Apple Silicon Mac running macOS 14 or later.
-- **Install and configure [AVP Play](https://github.com/myMartek/avp-play) first.** Use the Meta account that owns Beat Saber to prepare **Beat Saber 1.40.8 / version code 1716** and its local toolchain through AVP Play. Other versions, including 1.45, are not supported.
+- **Install and configure [AVP Play](https://github.com/myMartek/avp-play) first.** Use the Meta account that owns Beat Saber to prepare **Beat Saber 1.40.8** and its local toolchain through AVP Play. Version names such as `1.40.8_12345` are accepted; internal version codes and OBB filenames are detected automatically. Other game versions, including 1.45, are not supported.
 - Xcode with a visionOS SDK compatible with your AVP Play toolchain, signed in to your own Apple development account. Complete an AVP Play installation first.
 - Your Apple Vision Pro paired with Xcode, with Developer Mode enabled, unlocked, and connected to the same network as the Mac.
 - Free space for local processing and the generated library.
@@ -40,7 +40,7 @@ A Quest headset is not required. SaberDock does not sign in to Meta, download ga
 **AVP Play must be installed and set up before you use SaberDock.**
 
 1. Install [AVP Play](https://github.com/myMartek/avp-play) on your Mac and follow its setup guide.
-2. In AVP Play, connect the Meta account that owns **Beat Saber 1.40.8 (1716)**. Follow AVP Play's guide to verify your purchase and prepare the game files supplied by Meta.
+2. In AVP Play, connect the Meta account that owns **Beat Saber 1.40.8**. Follow AVP Play's guide to verify your purchase and prepare the game files supplied by Meta.
 3. Complete a game installation with AVP Play and confirm it can launch on your Vision Pro. Keep AVP Play's local app build and downloaded game files. SaberDock reuses that matching build; it does not translate the game or rebuild its executable. If the build is missing, return to AVP Play and complete the installation there first. Then install SaberDock below.
 
 ## Install SaberDock on your Mac

@@ -2,8 +2,8 @@ from i18n import tr
 """Read AVP Play's local library and prepare an isolated, version-matched runtime."""
 import hashlib,json,plistlib,re,shutil,subprocess,zipfile
 from pathlib import Path
-VERSION_CODE=1716
-OBB_NAME='main.1716.com.beatgames.beatsaber.obb'
+VERSION_NAME='1.40.8'
+OBB_PATTERN=r'main\.\d+\.com\.beatgames\.beatsaber\.obb'
 
 def read(path,default=None):
  try:return json.loads(Path(path).read_text())
@@ -12,18 +12,28 @@ def read(path,default=None):
 def save(path,data):
  path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);temp=path.with_name(path.name+'.new');temp.write_text(json.dumps(data,ensure_ascii=False,indent=2));temp.replace(path)
 
-def version_of_tree(tree):
+def version_info(tree):
  path=Path(tree)/'apktool.yml'
- if not path.is_file():return None
- match=re.search(r'versionCode:\s*[\'\"]?(\d+)',path.read_text())
- return int(match[1]) if match else None
+ if not path.is_file():return {'name':'','code':None}
+ text=path.read_text()
+ name=re.search(r"""versionName:\s*['"]?([^\s'"]+)""",text)
+ code=re.search(r"""versionCode:\s*['"]?(\d+)""",text)
+ return {'name':name[1] if name else '', 'code':int(code[1]) if code else None}
+
+def version_of_tree(tree):
+ return re.split(r'[_+]',version_info(tree)['name'],maxsplit=1)[0]
+
+def resource_name(environment):
+ name=environment.get('obbName','')
+ if not re.fullmatch(OBB_PATTERN,name):raise ValueError(tr('无法确定对应的 OBB 文件，请先在 AVP Play 完成 Beat Saber 1.40.8 的安装。'))
+ return name
 
 def reusable_build(matched):
- if not matched or version_of_tree(matched.get('tree','/nonexistent'))!=VERSION_CODE:return False
  try:
+  if not matched or version_of_tree(matched.get('tree','/nonexistent'))!=VERSION_NAME or version_info(matched['tree'])['code'] is None:return False
   app=Path(matched['app']);info=plistlib.loads((app/'Info.plist').read_bytes())
-  executable=info.get('CFBundleExecutable','')
-  return bool(executable and Path(executable).name==executable and (app/executable).is_file() and info.get('KLObbFile')==OBB_NAME and info.get('KLTree')=='beatsaber140')
+  executable=info.get('CFBundleExecutable','');obb=info.get('KLObbFile','')
+  return bool(executable and Path(executable).name==executable and (app/executable).is_file() and re.fullmatch(OBB_PATTERN,obb) and (not matched.get('obbName') or matched['obbName']==obb) and info.get('KLTree')=='beatsaber140')
  except (OSError,ValueError,KeyError,TypeError):return False
 
 def discover(base=None,app=None,store=None):
@@ -32,7 +42,7 @@ def discover(base=None,app=None,store=None):
  app=next((p for p in candidates if (p/'Contents/Helpers/avpplay').is_file()),None)
  settings=read(base/'settings.json',{})
  store=Path(store or settings.get('store') or base/'store').expanduser().resolve()
- folder=store/'beatsaber140-1716';apk=folder/'beat-saber.apk';obb=folder/OBB_NAME
+ apk=store/'beatsaber140/beat-saber.apk';obb=store/'beatsaber140/main.com.beatgames.beatsaber.obb';obb_name='';version={'name':VERSION_NAME,'code':None}
  jobs=[]
  for path in (base/'jobs').glob('beatsaber140-*.json'):
   try:jobs.append(read(path,{}))
@@ -48,19 +58,26 @@ def discover(base=None,app=None,store=None):
  matched=None
  for raw in toolchains:
   chain=Path(raw)
-  if version_of_tree(chain/'beatsaber140')!=VERSION_CODE:continue
+  if version_of_tree(chain/'beatsaber140')!=VERSION_NAME:continue
+  current_version=version_info(chain/'beatsaber140')
   for built in chain.glob('visionos/build/dd-device-beatsaber140*/Build/Products/Debug-xros/*.app'):
    try:
     candidate={'app':str(built),'tree':str(chain/'beatsaber140'),'toolchain':str(chain)}
-    if reusable_build(candidate):matched=candidate;break
+    if not reusable_build(candidate):continue
+    info=plistlib.loads((built/'Info.plist').read_bytes());name=info['KLObbFile']
+    folder=store/('beatsaber140-'+str(current_version['code']))
+    current_apk=folder/'beat-saber.apk';current_obb=folder/name
+    if not current_apk.is_file() or not current_obb.is_file():continue
+    candidate.update(obbName=name,versionName=current_version['name'],versionCode=current_version['code'])
+    matched=candidate;apk=current_apk;obb=current_obb;obb_name=name;version=current_version;break
    except (OSError,ValueError):continue
   if matched:break
  issues=[]
  if not app:issues.append(tr('找不到 AVP Play.app，请先安装 AVP Play 或手动选择其应用文件。'))
- if not apk.is_file() or not obb.is_file():issues.append(tr('未找到 Beat Saber 1.40.8（1716）的完整下载。请先在 AVP Play 下载该版本；当前通用版暂不支持 1.45。'))
+ if not apk.is_file() or not obb.is_file():issues.append(tr('未找到 Beat Saber 1.40.8 的匹配下载。请先在 AVP Play 下载并完成该版本安装；当前通用版暂不支持 1.45。'))
  if not toolchains:issues.append(tr('找不到 AVP Play 工具链，请先用 AVP Play 完成一次游戏安装。'))
- if not matched:issues.append(tr('未找到 AVP Play 已生成的 Beat Saber 1.40.8（1716）应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。'))
- return {'avpRoot':str(base),'avpApp':str(app) if app else '', 'store':str(store),'apk':str(apk),'sourceObb':str(obb),'toolchains':toolchains,'matched':matched,'team':team,'ready':not issues,'issues':issues,'version':'1.40.8 (1716)'}
+ if not matched:issues.append(tr('未找到 AVP Play 已生成的 Beat Saber 1.40.8 应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。'))
+ return {'avpRoot':str(base),'avpApp':str(app) if app else '', 'store':str(store),'apk':str(apk),'sourceObb':str(obb),'toolchains':toolchains,'matched':matched,'team':team,'ready':not issues,'issues':issues,'version':VERSION_NAME,'versionName':version['name'],'versionCode':version['code'],'obbName':obb_name}
 
 def validate_source(environment):
  if not environment['ready']:raise ValueError('\n'.join(environment['issues']))
@@ -78,30 +95,31 @@ def command(argv,*,cwd=None,env=None,timeout=900):
 def prepare(environment,support,resources,team,bundle,note,*,build_app=True):
  validate_source(environment)
  matched=environment.get('matched')
- if not reusable_build(matched):raise ValueError(tr('未找到 AVP Play 已生成的 Beat Saber 1.40.8（1716）应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。'))
+ if not reusable_build(matched):raise ValueError(tr('未找到 AVP Play 已生成的 Beat Saber 1.40.8 应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。'))
+ version=version_info(matched['tree']);obb_name=resource_name(environment)
  support=Path(support)
  source=Path(matched['app']).resolve()
  info=plistlib.loads((source/'Info.plist').read_bytes())
  stamp=(source/info['CFBundleExecutable']).stat()
  source_stamp=[str(source),stamp.st_size,stamp.st_mtime_ns]
- identity=hashlib.sha256(('avp-reuse-v1'+str(environment['apk'])+hashlib.sha256(Path(environment['apk']).read_bytes()).hexdigest()+json.dumps(source_stamp)+bundle).encode()).hexdigest()[:24]
+ identity=hashlib.sha256(('avp-reuse-v2'+str(environment['apk'])+hashlib.sha256(Path(environment['apk']).read_bytes()).hexdigest()+json.dumps(source_stamp)+str(version)+obb_name+bundle).encode()).hexdigest()[:24]
  destination=support/'runtime-prepared'/identity
  manifest=read(destination/'runtime.json',{})
  if manifest.get('sourceBuild')==source_stamp and reusable_build(manifest):return manifest
  destination.mkdir(parents=True,exist_ok=True)
  # AVP Play's CLI verifies the APK package and version after decoding it. No fetch/login operation is called.
- recipe={'schema':1,'id':'beatsaber140','title':'Beat Saber','package':'com.beatgames.beatsaber','versionName':'1.40.8','versionCode':1716,'store':{},'toolchain':{'target':'beatsaber140','minCommit':''},'files':[{'name':'beat-saber.apk','role':'apk','id':'0','required':True}], 'status':{'playability':'local','download':'local'}}
+ recipe={'schema':1,'id':'beatsaber140','title':'Beat Saber','package':'com.beatgames.beatsaber','versionName':version['name'],'versionCode':version['code'],'store':{},'toolchain':{'target':'beatsaber140','minCommit':''},'files':[{'name':'beat-saber.apk','role':'apk','id':'0','required':True}], 'status':{'playability':'local','download':'local'}}
  recipes=destination/'recipes';recipes.mkdir(exist_ok=True);save(recipes/'beatsaber140.json',recipe)
  unpacked=destination/'beatsaber140'
  note(tr('正在读取 AVP Play 已下载的 1.40.8 文件…'))
  if unpacked.exists():shutil.rmtree(unpacked)
  command([Path(environment['avpApp'])/'Contents/Helpers/avpplay','unpack','beatsaber140','--recipes',recipes,'--store',environment['store'],'--to',unpacked],timeout=180)
- if version_of_tree(unpacked)!=1716:raise ValueError(tr('APK 版本不匹配，需要 1.40.8（1716）。'))
- if not build_app:return {'tree':str(unpacked),'versionCode':1716}
+ if version_of_tree(unpacked)!=VERSION_NAME or version_info(unpacked)!=version:raise ValueError(tr('APK 与 AVP Play 的 1.40.8 应用构建不匹配，请在 AVP Play 完成对应版本安装。'))
+ if not build_app:return {'tree':str(unpacked),'versionCode':version['code'],'versionName':version['name'],'obbName':obb_name}
  target=destination/'Klepton.app';shutil.rmtree(target,ignore_errors=True)
  command(['/usr/bin/ditto',source,target]);note(tr('已复用 AVP Play 的 1.40.8 应用构建。'))
- if not reusable_build({'app':str(target),'tree':str(unpacked)}):raise ValueError(tr('未找到 AVP Play 已生成的 Beat Saber 1.40.8（1716）应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。'))
- result={'app':str(target),'tree':str(unpacked),'apk':environment['apk'],'versionCode':1716,'sourceBuild':source_stamp}
+ if not reusable_build({'app':str(target),'tree':str(unpacked),'obbName':obb_name}):raise ValueError(tr('未找到 AVP Play 已生成的 Beat Saber 1.40.8 应用。请先在 AVP Play 下载该版本并完成安装，确认能在 Vision Pro 启动后，再返回 SaberDock。'))
+ result={'app':str(target),'tree':str(unpacked),'apk':environment['apk'],'versionCode':version['code'],'versionName':version['name'],'obbName':obb_name,'sourceBuild':source_stamp}
  save(destination/'runtime.json',result);return result
 
 

@@ -13,19 +13,37 @@ class DiscoveryTests(unittest.TestCase):
  def discover(self):return i.discover(self.base,self.app)
  def add_download(self,code):
   folder=self.store/f'beatsaber140-{code}';folder.mkdir();(folder/'beat-saber.apk').write_bytes(b'fixture');(folder/f'main.{code}.com.beatgames.beatsaber.obb').write_bytes(b'fixture')
- def test_external_store_and_latest_version_not_mixed(self):
-  self.add_download(3237);env=self.discover();self.assertFalse(env['ready']);self.assertEqual(env['store'],str(self.store.resolve()));self.assertIn('1.40.8','\n'.join(env['issues']))
-  self.add_download(1716);self.assertFalse(self.discover()['ready']);self.assertIn('AVP Play','\n'.join(self.discover()['issues']))
- def test_other_version_build_never_reused(self):
-  self.add_download(1716);tree=self.chain/'beatsaber140';tree.mkdir();(tree/'apktool.yml').write_text('versionInfo:\n  versionCode: 3237\n')
-  app=self.chain/'visionos/build/dd-device-beatsaber140/Build/Products/Debug-xros/Klepton.app';app.mkdir(parents=True);(app/'Info.plist').write_bytes(plistlib.dumps({'KLObbFile':i.OBB_NAME,'KLTree':'beatsaber140','CFBundleExecutable':'Klepton'}));(app/'Klepton').write_bytes(b'fixture executable')
-  self.assertIsNone(self.discover()['matched']);(tree/'apktool.yml').write_text('versionInfo:\n  versionCode: 1716\n');self.assertIsNotNone(self.discover()['matched']);self.assertTrue(self.discover()['ready'])
-  (app/'Klepton').unlink();self.assertFalse(self.discover()['ready']);self.assertIsNone(self.discover()['matched'])
+ def add_build(self,name,code):
+  tree=self.chain/'beatsaber140';tree.mkdir(exist_ok=True);(tree/'apktool.yml').write_text(f"versionInfo:\n  versionName: '{name}'\n  versionCode: '{code}'\n")
+  app=self.chain/'visionos/build/dd-device-beatsaber140/Build/Products/Debug-xros/Klepton.app';app.mkdir(parents=True,exist_ok=True)
+  (app/'Info.plist').write_bytes(plistlib.dumps({'KLObbFile':f'main.{code}.com.beatgames.beatsaber.obb','KLTree':'beatsaber140','CFBundleExecutable':'Klepton'}));(app/'Klepton').write_bytes(b'fixture executable')
+  return app
+ def test_external_store_and_newer_game_not_mixed(self):
+  self.add_download(3237);self.add_build('1.45.3_30054',3237)
+  env=self.discover();self.assertFalse(env['ready']);self.assertEqual(env['store'],str(self.store.resolve()));self.assertIn('1.40.8','\n'.join(env['issues']))
+ def test_1408_accepts_different_codes_and_build_suffixes(self):
+  for name,code in [('1.40.8',1716),('1.40.8_99999',2789),('1.40.8+build123',4321)]:
+   with self.subTest(name=name,code=code):
+    self.add_download(code);self.add_build(name,code);env=self.discover()
+    self.assertTrue(env['ready'],env['issues']);self.assertEqual(env['version'],'1.40.8')
+    self.assertEqual(env['versionCode'],code);self.assertEqual(env['obbName'],f'main.{code}.com.beatgames.beatsaber.obb')
+    self.assertEqual(Path(env['apk']).parent.name,f'beatsaber140-{code}')
+ def test_version_name_required_even_if_code_is_1716(self):
+  self.add_download(1716)
+  for name in ['1.45.3_30054','1.40.80','1.40.8.1','']:
+   self.add_build(name,1716);self.assertFalse(self.discover()['ready'])
+ def test_missing_executable_or_matching_download_is_not_ready(self):
+  self.add_download(1716);app=self.add_build('1.40.8_12345',2789)
+  self.assertFalse(self.discover()['ready'])
+  self.add_download(2789);self.assertTrue(self.discover()['ready'])
+  (app/'Klepton').unlink();self.assertFalse(self.discover()['ready'])
  def test_team_from_local_job(self):
   i.save(self.base/'jobs/beatsaber140-fixture.json',{'updated':'2026-01-01','request':{'team':'ABCDE12345','toolchain':str(self.chain)}})
   self.assertEqual(self.discover()['team'],'ABCDE12345')
- def test_no_game_fetch_command(self):
-  source=Path(i.__file__).read_text();self.assertNotIn("'fetch'",source);self.assertNotIn("'install',",source)
+ def test_no_game_fetch_or_translation_command(self):
+  source=Path(i.__file__).read_text()
+  for forbidden in ["'fetch'","'install',",'mkguest.sh','mkangle.sh','mkmvk.sh','Klepton.xcodeproj']:
+   self.assertNotIn(forbidden,source)
 
 class InstallTests(unittest.TestCase):
  def test_build_error_never_installs(self):
@@ -45,13 +63,13 @@ class FreshInstallFlowTests(unittest.TestCase):
    base=Path(folder);tree=base/'tree';(tree/'assets').mkdir(parents=True);(tree/'apktool.yml').write_text('versionCode: 1716');(tree/'AndroidManifest.xml').write_text('fixture');apk=base/'game.apk';apk.write_bytes(b'fixture')
    source=base/'source.obb';source.write_bytes(b'source');events=[];bundle='io.saberdock.abcde12345.beatsaber140'
    def build(root,job):
-    events.append('build');(job/i.OBB_NAME).write_bytes(b'custom');return {'resourceBytes':6,'resourceSha256':'fixture'}
+    events.append('build');(job/'main.2789.com.beatgames.beatsaber.obb').write_bytes(b'custom');return {'resourceBytes':6,'resourceSha256':'fixture'}
    def sign(name,job):events.append('sign');return base/'Klepton.app'
    def device(args,*unused):
     events.append(list(args))
     if 'apps' in args:return {'result':{'apps':[]}}
-    return {'result':{'files':[{'name':i.OBB_NAME,'metadata':{'size':6}}]}}
-   with patch.multiple(b,SUPPORT=base/'support',TEAM='ABCDE12345',BUNDLE=bundle,SOURCE=source,ENVIRONMENT={'apk':str(apk)}),patch.object(b,'build',side_effect=build),patch.object(b,'sign_app',side_effect=sign),patch.object(b,'devicectl',side_effect=device),patch.object(b,'run',side_effect=lambda args,**kw:events.append([str(a) for a in args])),patch.object(b,'send_resource',side_effect=lambda *a:events.append('send')),patch.object(b,'scan',return_value={'playlists':[]}),patch.object(i,'prepare',return_value={'tree':str(tree)}):
+    return {'result':{'files':[{'name':'main.2789.com.beatgames.beatsaber.obb','metadata':{'size':6}}]}}
+   with patch.multiple(b,SUPPORT=base/'support',TEAM='ABCDE12345',BUNDLE=bundle,SOURCE=source,ENVIRONMENT={'apk':str(apk),'obbName':'main.2789.com.beatgames.beatsaber.obb'}),patch.object(b,'build',side_effect=build),patch.object(b,'sign_app',side_effect=sign),patch.object(b,'devicectl',side_effect=device),patch.object(b,'run',side_effect=lambda args,**kw:events.append([str(a) for a in args])),patch.object(b,'send_resource',side_effect=lambda *a:events.append('send')),patch.object(b,'scan',return_value={'playlists':[]}),patch.object(i,'prepare',return_value={'tree':str(tree)}):
     result=b.install(folder,'SaberDock','fixture-device')
     self.assertTrue(result['installed']);self.assertEqual(events[:2],['build','sign']);self.assertIn('send',events)
     mutations=[e for e in events if isinstance(e,list) and ('copy' in e or 'install' in e)]
@@ -88,22 +106,23 @@ class SigningTests(unittest.TestCase):
 class RuntimeReuseTests(unittest.TestCase):
  def setUp(self):
   self.temp=tempfile.TemporaryDirectory();self.base=Path(self.temp.name)
-  self.tree=self.base/'AVPPlay/beatsaber140';self.tree.mkdir(parents=True);(self.tree/'apktool.yml').write_text('versionCode: 1716\n')
+  self.tree=self.base/'AVPPlay/beatsaber140';self.tree.mkdir(parents=True);(self.tree/'apktool.yml').write_text('versionCode: 2789\nversionName: 1.40.8_12345\n')
   self.app=self.base/'AVPPlay/Klepton.app';self.app.mkdir()
-  (self.app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable':'Klepton','KLObbFile':i.OBB_NAME,'KLTree':'beatsaber140'}))
+  (self.app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable':'Klepton','KLObbFile':'main.2789.com.beatgames.beatsaber.obb','KLTree':'beatsaber140'}))
   (self.app/'Klepton').write_bytes(b'fixture translated executable')
   self.apk=self.base/'game.apk';self.obb=self.base/'game.obb'
   for path,entries in [(self.apk,['AndroidManifest.xml','lib/arm64-v8a/libil2cpp.so']),(self.obb,['assets/BeatmapLevelsData/fitbeat','assets/aa/catalog.json'])]:
    with zipfile.ZipFile(path,'w') as archive:
     for name in entries:archive.writestr(name,b'fixture')
   self.support=self.base/'support'
-  self.env={'ready':True,'issues':[],'apk':str(self.apk),'sourceObb':str(self.obb),'avpApp':str(self.base/'AVP Play.app'),'store':str(self.base),'toolchains':[str(self.tree.parent)],'matched':{'app':str(self.app),'tree':str(self.tree)}}
+  self.env={'ready':True,'issues':[],'apk':str(self.apk),'sourceObb':str(self.obb),'obbName':'main.2789.com.beatgames.beatsaber.obb','avpApp':str(self.base/'AVP Play.app'),'store':str(self.base),'toolchains':[str(self.tree.parent)],'matched':{'app':str(self.app),'tree':str(self.tree)}}
   self.calls=[]
  def tearDown(self):self.temp.cleanup()
  def command(self,args,**kwargs):
   args=[str(a) for a in args];self.calls.append(args)
   if 'unpack' in args:
-   tree=Path(args[args.index('--to')+1]);tree.mkdir();(tree/'apktool.yml').write_text('versionCode: 1716\n')
+   recipe=i.read(Path(args[args.index('--recipes')+1])/'beatsaber140.json');self.assertEqual(recipe['versionName'],'1.40.8_12345');self.assertEqual(recipe['versionCode'],2789)
+   tree=Path(args[args.index('--to')+1]);tree.mkdir();(tree/'apktool.yml').write_text('versionCode: 2789\nversionName: 1.40.8_12345\n')
   elif args[0]=='/usr/bin/ditto':shutil.copytree(args[1],args[2])
   else:raise AssertionError('Unexpected external operation: '+repr(args))
  def prepare(self):
@@ -135,3 +154,31 @@ class RuntimeReuseTests(unittest.TestCase):
    self.calls.clear();result=self.prepare()
    self.assertEqual((Path(result['app'])/'Klepton').read_bytes(),(self.app/'Klepton').read_bytes())
    self.assertEqual(len(self.calls),2)
+
+
+ def test_mismatched_decoded_game_stops_before_app_copy(self):
+  def command(args,**kw):
+   self.command(args,**kw)
+   args=[str(x) for x in args]
+   if 'unpack' in args:
+    (Path(args[args.index('--to')+1])/'apktool.yml').write_text('versionName: 1.45.3_30054\nversionCode: 3237\n')
+  with patch.object(i,'command',side_effect=command):
+   with self.assertRaisesRegex(ValueError,'does not match'):self.prepare()
+  self.assertEqual(len(self.calls),1)
+
+class DeploymentFileNamesTests(unittest.TestCase):
+ def test_resource_copy_uses_discovered_obb_name(self):
+  name='main.4321.com.beatgames.beatsaber.obb'
+  with patch.object(b,'run') as run,patch.object(b,'ENVIRONMENT',{'obbName':name}):
+   b.send_resource('fixture-device',Path('/tmp')/name)
+   self.assertIn('Documents/android-files/obb/'+name,run.call_args.args[0])
+ def test_app_configuration_uses_discovered_obb_name(self):
+  with tempfile.TemporaryDirectory() as folder:
+   base=Path(folder);source=base/'Source.app';source.mkdir();(source/'Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable':'Klepton'}))
+   profile=base/'profile';profile.write_bytes(b'fixture');job=base/'job';job.mkdir()
+   def copy(args,**kw):
+    if args[0]=='/usr/bin/ditto':shutil.copytree(args[1],args[2])
+   with patch.object(b,'ENVIRONMENT',{'obbName':'main.4321.com.beatgames.beatsaber.obb'}),patch.object(i,'prepare',return_value={'app':str(source)}),patch.object(i,'provisioning',return_value=({'Entitlements':{}},'identity',profile)),patch.object(i,'sign_application',side_effect=lambda app,*args:app),patch.object(b,'run',side_effect=copy):
+    result=b.sign_app('SaberDock',job)
+   self.assertEqual(plistlib.loads((result/'Info.plist').read_bytes())['KLObbFile'],'main.4321.com.beatgames.beatsaber.obb')
+

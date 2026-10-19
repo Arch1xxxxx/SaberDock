@@ -1,0 +1,19 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1; classes = {}; objectVersion = 56;
+ objects = {
+ A10000000000000000000001 = {isa = PBXProject; attributes = {LastUpgradeCheck = 1600; TargetAttributes = {A10000000000000000000002 = {CreatedOnToolsVersion = 16.0; ProvisioningStyle = Automatic; DevelopmentTeam = TEAM_PLACEHOLDER; }; }; }; buildConfigurationList = A10000000000000000000009; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; knownRegions = (en, Base); mainGroup = A10000000000000000000003; productRefGroup = A10000000000000000000004; projectDirPath = ""; projectRoot = ""; targets = (A10000000000000000000002); };
+ A10000000000000000000002 = {isa = PBXNativeTarget; buildConfigurationList = A1000000000000000000000A; buildPhases = (A10000000000000000000007, A10000000000000000000008); buildRules = (); dependencies = (); name = LibrarySign; productName = LibrarySign; productReference = A10000000000000000000005; productType = "com.apple.product-type.application"; };
+ A10000000000000000000003 = {isa = PBXGroup; children = (A10000000000000000000006,A10000000000000000000004); sourceTree = "<group>"; };
+ A10000000000000000000004 = {isa = PBXGroup; children = (A10000000000000000000005); name = Products; sourceTree = "<group>"; };
+ A10000000000000000000005 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LibrarySign.app; sourceTree = BUILT_PRODUCTS_DIR; };
+ A10000000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Main.swift; sourceTree = "<group>"; };
+ A10000000000000000000007 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000F); runOnlyForDeploymentPostprocessing = 0; };
+ A10000000000000000000008 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+ A10000000000000000000009 = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000000B); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+ A1000000000000000000000A = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000000C); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+ A1000000000000000000000B = {isa = XCBuildConfiguration; name = Debug; buildSettings = {SDKROOT = xros; SWIFT_VERSION = 5.0; XROS_DEPLOYMENT_TARGET = 2.0; CLANG_ENABLE_MODULES = YES; }; };
+ A1000000000000000000000C = {isa = XCBuildConfiguration; name = Debug; buildSettings = {SDKROOT = xros; SUPPORTED_PLATFORMS = xros; SWIFT_VERSION = 5.0; XROS_DEPLOYMENT_TARGET = 2.0; PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = BUNDLE_PLACEHOLDER; DEVELOPMENT_TEAM = TEAM_PLACEHOLDER; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UILaunchScreen_Generation = YES; TARGETED_DEVICE_FAMILY = 7; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; };
+ A1000000000000000000000F = {isa = PBXBuildFile; fileRef = A10000000000000000000006; };
+ }; rootObject = A10000000000000000000001;
+}

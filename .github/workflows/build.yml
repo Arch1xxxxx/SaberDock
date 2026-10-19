@@ -1,0 +1,48 @@
+name: Build SaberDock
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mac:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Build portable app and audit release
+        run: python3 scripts/build_app.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SaberDock-macOS-arm64
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+  release:
+    if: github.event_name != 'pull_request'
+    needs: mac
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: SaberDock-macOS-arm64
+          path: dist
+      - name: Publish preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            RELEASE_TAG="${GITHUB_REF#refs/tags/}"
+          else
+            RELEASE_TAG="preview-${GITHUB_SHA:0:7}"
+          fi
+          gh release create "$RELEASE_TAG" dist/*.zip dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "SaberDock $RELEASE_TAG" --generate-notes --prerelease

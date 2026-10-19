@@ -1,0 +1,17 @@
+# Explicit dependency set; FMOD export is intentionally unused (see patch_unitypy.py).
+UnityPy==1.25.4
+soundfile==0.14.0
+numpy==2.5.4
+pillow==13.0.0
+lz4==4.4.5
+brotli==1.2.0
+texture2ddecoder==1.0.6
+etcpak==0.9.15
+astc-encoder-py==0.1.12
+fsspec==2026.9.0
+attrs==26.1.0
+tpk_ar==0.2.4
+cffi==2.1.1
+pycparser==3.11
+archspec==0.2.6
+typing_extensions==4.16.0

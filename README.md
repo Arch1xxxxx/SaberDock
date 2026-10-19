@@ -107,7 +107,7 @@ For problems with SaberDock installation, playlists, or syncing, open an issue i
 
 ## Creators
 
-Created by [Arch1xxxxx](https://github.com/Arch1xxxxx) and Codex (AI coding assistant).
+Created by [Arch1xxxxx](https://github.com/Arch1xxxxx) and Codex.
 
 ## Acknowledgments
 
@@ -238,7 +238,7 @@ SaberDock 的安装、曲库或同步问题，请提交到 [SaberDock 的问题�
 
 ## 创建者
 
-由 [Arch1xxxxx](https://github.com/Arch1xxxxx) 与 Codex（AI 编程助手）共同创建。
+由 [Arch1xxxxx](https://github.com/Arch1xxxxx) 与 Codex共同创建。
 
 ## 致谢
 

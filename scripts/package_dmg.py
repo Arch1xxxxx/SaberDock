@@ -27,7 +27,7 @@ def main():
             'You can then find it in the macOS app library and Spotlight. Eject this image after installation.\n',
             encoding='utf-8')
         run('/usr/bin/hdiutil', 'create', '-ov', '-volname', 'SaberDock', '-srcfolder', staging,
-            '-format', 'UDZO', '-fs', 'HFS+', image)
+            '-format', 'UDZO', '-fs', 'APFS', image)
     run('/usr/bin/hdiutil', 'verify', image)
     with tempfile.TemporaryDirectory(prefix='saberdock-dmg-verify-') as mount:
         run('/usr/bin/hdiutil', 'attach', image, '-readonly', '-nobrowse', '-mountpoint', mount)

@@ -15,7 +15,9 @@ def main():
     image = destination / f'SaberDock-{version}-macOS-arm64.dmg'
     with tempfile.TemporaryDirectory(prefix='saberdock-dmg-') as folder:
         staging = Path(folder)
-        run('/usr/bin/ditto', app, staging / app.name)
+        run('/usr/bin/ditto', '--norsrc', '--noextattr', app, staging / app.name)
+        run('/usr/bin/xattr', '-cr', staging / app.name)
+        run('/usr/bin/codesign', '--verify', '--deep', '--strict', staging / app.name)
         (staging / 'Applications').symlink_to('/Applications')
         (staging / '安装说明 - Install.txt').write_text(
             '将 SaberDock 拖到 Applications（应用程序）文件夹，然后从应用程序打开一次。\n'
@@ -27,6 +29,13 @@ def main():
         run('/usr/bin/hdiutil', 'create', '-ov', '-volname', 'SaberDock', '-srcfolder', staging,
             '-format', 'UDZO', '-fs', 'HFS+', image)
     run('/usr/bin/hdiutil', 'verify', image)
+    with tempfile.TemporaryDirectory(prefix='saberdock-dmg-verify-') as mount:
+        run('/usr/bin/hdiutil', 'attach', image, '-readonly', '-nobrowse', '-mountpoint', mount)
+        try:
+            run('/usr/bin/codesign', '--verify', '--deep', '--strict', Path(mount) / app.name)
+            assert (Path(mount) / 'Applications').resolve() == Path('/Applications')
+        finally:
+            run('/usr/bin/hdiutil', 'detach', mount)
     print('Built:', image)
 
 if __name__ == '__main__':

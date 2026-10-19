@@ -2,9 +2,9 @@
 
 # SaberDock
 
-用于在 Mac 上管理 Beat Saber 自定义谱面，并借助本机 AVP Play 为 Apple Vision Pro 安装和更新独立自定义内容应用。
+用于在 Mac 上管理 Beat Saber 自定义谱面，并使用你通过 AVP Play 从 Meta 下载的游戏文件，为 Apple Vision Pro 安装和更新独立自定义内容应用。
 
-**SaberDock 不包含、也不分发任何游戏、APK、OBB、付费曲包或由游戏生成的运行文件。本软件只是辅助工具，让你在已有的设备上游玩已拥有游戏的自定义内容。你需要通过自己的 AVP Play 安装提供自己拥有的游戏文件。**
+**SaberDock 不包含、也不分发任何游戏、APK、OBB、付费曲包或由游戏生成的运行文件。本软件只是辅助工具，让你在已有的设备上游玩已拥有游戏的自定义内容。你需要先安装 AVP Play，再使用自己的 Meta 账户，通过 AVP Play 从 Meta 下载已拥有的 Beat Saber 游戏文件。SaberDock 仅在本机读取这些文件。**
 
 **安装或更新前，必须准备至少两个歌单（曲包），且每个歌单至少包含一份受支持的谱面。目前仅有一个歌单时，头显应用无法进入主菜单；空文件夹不计入歌单数量。整理或删除歌曲后，也请保留至少两个非空歌单。**
 
@@ -20,14 +20,22 @@
 ## 使用前准备
 
 - Apple Silicon Mac，macOS 14 或更新版本。
-- [AVP Play](https://github.com/myMartek/avp-play)、本机工具链，以及通过自己账户完整下载的 **Beat Saber 1.40.8 / versionCode 1716**（APK 与 OBB）。不支持 1.45 等其他版本。
+- **先安装 [AVP Play](https://github.com/myMartek/avp-play)** 并配置本机工具链，再使用自己的 Meta 账户，通过 AVP Play 从 Meta 完整下载已拥有的 **Beat Saber 1.40.8 / versionCode 1716** 游戏文件（APK 与 OBB）。不支持 1.45 等其他版本。
 - 已登录自己 Apple 开发账户的 Xcode，及与 AVP Play 工具链兼容的 visionOS SDK。请先通过 AVP Play 完成一次安装。
 - 你自己的 Apple Vision Pro，已与 Xcode 配对并开启开发者模式，保持解锁，与 Mac 连接同一网络。
 - 足够的本机空间，用于歌曲处理与生成曲库。
 
 不需要 Quest 头显。SaberDock 不登录 Meta、不下载游戏、不解锁付费内容，也不从其他来源获取游戏文件。
 
-## 在 Mac 上安装
+## 先安装 AVP Play
+
+**使用 SaberDock 前，必须先安装并完成 AVP Play 的设置。**
+
+1. 在 Mac 上安装 [AVP Play](https://github.com/myMartek/avp-play)，按其使用指引完成设置。
+2. 在 AVP Play 中使用自己的 Meta 账户，从 Meta 下载已拥有的 **Beat Saber 1.40.8（1716）** 游戏文件。
+3. 先通过 AVP Play 完成一次游戏安装，确认游戏能在 Vision Pro 上启动，再按下文安装 SaberDock。
+
+## 在 Mac 上安装 SaberDock
 
 1. 从 [Releases](https://github.com/Arch1xxxxx/SaberDock/releases) 下载 Apple Silicon 版 `.dmg`。
 2. 打开后，将 **SaberDock** 拖到旁边的 **Applications（应用程序）** 快捷方式。
@@ -42,7 +50,7 @@
 3. 保持头显解锁，选择你的 Vision Pro，点击 **Install（安装）**。SaberDock 在本机准备并签名独立应用，再安装应用并传输必要数据。
 4. 在头显打开 **SaberDock Custom Songs**，或你自行设置的名称。
 
-SaberDock 使用你的本地游戏文件和自己的签名账户，与 AVP Play 原版游戏安装相互独立。签名有效期及设备能力取决于你的 Apple 开发账户。
+SaberDock 使用通过 AVP Play 从 Meta 下载的游戏文件和你自己的签名账户，与 AVP Play 原版游戏安装相互独立。签名有效期及设备能力取决于你的 Apple 开发账户。
 
 ## 管理曲库
 

@@ -2,9 +2,9 @@
 
 # SaberDock
 
-A Mac app for organizing custom Beat Saber maps and updating a separate custom-content app on Apple Vision Pro using your local AVP Play installation.
+A Mac app for organizing custom Beat Saber maps and updating a separate custom-content app on Apple Vision Pro, using game files you downloaded from Meta through AVP Play.
 
-**SaberDock does not include or distribute any game, APK, OBB, paid music pack, or game-derived runtime. It is a companion tool for playing custom content for games you already own on devices you already own. You must provide your own game files through your own AVP Play installation.**
+**SaberDock does not include or distribute any game, APK, OBB, paid music pack, or game-derived runtime. It is a companion tool for playing custom content for games you already own on devices you already own. You must install AVP Play first and use it to download your owned Beat Saber game files from Meta with your own account. SaberDock reads those files locally.**
 
 **Before installing or updating, add at least two playlists, each containing at least one supported map. The headset app currently cannot reach the main menu with only one playlist; empty folders do not count. Keep at least two nonempty playlists when reorganizing or deleting songs.**
 
@@ -20,14 +20,22 @@ A Mac app for organizing custom Beat Saber maps and updating a separate custom-c
 ## Requirements
 
 - An Apple Silicon Mac running macOS 14 or later.
-- [AVP Play](https://github.com/myMartek/avp-play), its local toolchain, and your own complete **Beat Saber 1.40.8 / version code 1716** download (APK and OBB). Other versions, including 1.45, are not supported.
+- **Install [AVP Play](https://github.com/myMartek/avp-play) first**, set up its local toolchain, and use your own Meta account in AVP Play to download your owned **Beat Saber 1.40.8 / version code 1716** files (APK and OBB) from Meta. Other versions, including 1.45, are not supported.
 - Xcode with a visionOS SDK compatible with your AVP Play toolchain, signed in to your own Apple development account. Complete an AVP Play installation first.
 - Your Apple Vision Pro paired with Xcode, with Developer Mode enabled, unlocked, and connected to the same network as the Mac.
 - Free space for local processing and the generated library.
 
 A Quest headset is not required. SaberDock does not sign in to Meta, download games, unlock purchases, or obtain game files from third-party sources.
 
-## Install on your Mac
+## Install AVP Play first
+
+**AVP Play must be installed and set up before you use SaberDock.**
+
+1. Install [AVP Play](https://github.com/myMartek/avp-play) on your Mac and follow its setup guide.
+2. Use your own Meta account in AVP Play to download your owned **Beat Saber 1.40.8 (1716)** game files from Meta.
+3. Complete a game installation with AVP Play and confirm it can launch on your Vision Pro. Then install SaberDock below.
+
+## Install SaberDock on your Mac
 
 1. Download the Apple Silicon `.dmg` from [Releases](https://github.com/Arch1xxxxx/SaberDock/releases).
 2. Open it and drag **SaberDock** to the **Applications** shortcut.
@@ -42,7 +50,7 @@ The app is locally signed and is not notarized by Apple. If macOS blocks the fir
 3. Keep the headset unlocked, select your Vision Pro, and click **Install**. SaberDock prepares and signs the separate app locally, then installs the app and required data on your headset.
 4. Open **SaberDock Custom Songs**, or the name you chose, on the headset.
 
-SaberDock uses your local game files and your own signing account. The original AVP Play game installation remains separate. Signing validity and device access depend on your Apple development account.
+SaberDock uses the game files downloaded from Meta through AVP Play and your own signing account. The original AVP Play game installation remains separate. Signing validity and device access depend on your Apple development account.
 
 ## Organize your library
 

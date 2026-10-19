@@ -30,7 +30,7 @@
 
 ## 安装与首次使用
 
-1. 从 [Releases](https://github.com/Arch1xxxxx/SaberDock/releases) 下载 `SaberDock-…-macOS-arm64.zip`，解压后拖到“应用程序”。公开预览包使用本地签名，尚未取得 Apple Developer ID 公证；首次打开时按 macOS 的“隐私与安全性”提示允许即可。
+1. 从 [Releases](https://github.com/Arch1xxxxx/SaberDock/releases) 下载 `SaberDock-…-macOS-arm64.dmg`，打开后将 SaberDock 拖到旁边的“Applications（应用程序）”文件夹，再从“应用程序”打开一次。之后可在 macOS 应用库及 Spotlight 中搜索 `SaberDock` 或 `SaberDock 曲库`。也保留 ZIP 下载。预览包使用本地签名，尚未取得 Apple Developer ID 公证；首次打开时按 macOS 的“隐私与安全性”提示允许即可。
 2. 打开“安装设置”。应用会检查 AVP Play 应用、数据、下载目录和最近使用的开发团队 ID；确认它们属于你自己的账户。
 3. 选择曲库目录。默认是 `音乐/Beat Saber 曲库`。每个子文件夹对应一个曲包，放入 ZIP 或解压谱面即可。
 4. 保持头显解锁，选择设备，点击“首次安装／修复”。谱面转换、资源校验和签名完成后才开始安装与传输。

@@ -3,7 +3,7 @@
 import argparse,hashlib,json,os,plistlib,shutil,subprocess,sys,tarfile,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
-BUILD=ROOT/'.build';DIST=ROOT/'dist';VERSION='0.1.1'
+BUILD=ROOT/'.build';DIST=ROOT/'dist';VERSION='0.1.2'
 def run(args,**kw):subprocess.run([str(x) for x in args],check=True,**kw)
 def download(item):
  target=BUILD/Path(item['url']).name
@@ -50,6 +50,8 @@ def main():
  run(['/usr/bin/codesign','--force','--deep','--sign','-',app]);run(['/usr/bin/codesign','--verify','--deep','--strict',app])
  run([python,ROOT/'scripts/audit_release.py',app])
  archive=DIST/('SaberDock-'+VERSION+'-macOS-arm64.zip');run(['/usr/bin/ditto','-c','-k','--keepParent',app,archive])
- digest=hashlib.sha256(archive.read_bytes()).hexdigest();(DIST/'SHA256SUMS.txt').write_text(digest+'  '+archive.name+'\n')
+ run([python,ROOT/'scripts/package_dmg.py',app,DIST,VERSION])
+ artifacts=[archive,DIST/('SaberDock-'+VERSION+'-macOS-arm64.dmg')]
+ (DIST/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256(item.read_bytes()).hexdigest()+'  '+item.name+'\n' for item in artifacts))
  print('Built:',archive)
 if __name__=='__main__':main()

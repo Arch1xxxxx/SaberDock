@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Publish a read-only DMG with the SaberDock app and an Applications shortcut for drag-to-install. Keep the ZIP alternative and include both checksums.
+- Document installation in Applications and first launch so macOS can register the app for app-library and Spotlight searches.
+
 ## 0.1.1
 
 - Fix the independently built visionOS application exiting before its launch screen appears. Xcode Debug builds can place `Klepton.debug.dylib` and `__preview.dylib` beside the main executable; these libraries need their own development signature.

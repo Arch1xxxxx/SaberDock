@@ -22,6 +22,7 @@ jobs:
           name: SaberDock-macOS-arm64
           path: |
             dist/*.zip
+            dist/*.dmg
             dist/SHA256SUMS.txt
           if-no-files-found: error
   release:
@@ -45,4 +46,4 @@ jobs:
           else
             RELEASE_TAG="preview-${GITHUB_SHA:0:7}"
           fi
-          gh release create "$RELEASE_TAG" dist/*.zip dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "SaberDock $RELEASE_TAG" --generate-notes --prerelease
+          gh release create "$RELEASE_TAG" dist/*.zip dist/*.dmg dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "SaberDock $RELEASE_TAG" --generate-notes --prerelease

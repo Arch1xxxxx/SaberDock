@@ -89,6 +89,10 @@ python3 scripts/build_app.py
 
 构建会下载固定版本并核对校验和的便携 Python、Node 和锁定依赖。生成的 Mac 应用无需另装 Python 或 Node。DMG、ZIP 和 SHA-256 校验文件位于 `dist/`；发布包检查会排除游戏内容和个人签名资料。
 
+## 创建者
+
+由 [Arch1xxxxx](https://github.com/Arch1xxxxx) 与 Codex（AI 编程助手）共同创建。
+
 ## 所有权、商标与许可
 
 感谢 [AVP Play](https://github.com/myMartek/avp-play)、[Klepton](https://github.com/shinyquagsire23/Klepton)、UnityPy 和 bsmap。

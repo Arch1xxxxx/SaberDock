@@ -89,6 +89,10 @@ python3 scripts/build_app.py
 
 The build downloads checksum-pinned portable Python and Node runtimes and locked dependencies. The resulting Mac app does not require a separate Python or Node installation. DMG, ZIP, and SHA-256 checksums are written to `dist/`. The package audit excludes game content and personal signing materials.
 
+## Creators
+
+Created by [Arch1xxxxx](https://github.com/Arch1xxxxx) and Codex (AI coding assistant).
+
 ## Ownership, trademarks, and license
 
 Thanks to [AVP Play](https://github.com/myMartek/avp-play), [Klepton](https://github.com/shinyquagsire23/Klepton), UnityPy, and bsmap.
@@ -187,6 +191,10 @@ python3 scripts/build_app.py
 ```
 
 构建会下载固定版本并核对校验和的便携 Python、Node 和锁定依赖。生成的 Mac 应用无需另装 Python 或 Node。DMG、ZIP 和 SHA-256 校验文件位于 `dist/`；发布包检查会排除游戏内容和个人签名资料。
+
+## 创建者
+
+由 [Arch1xxxxx](https://github.com/Arch1xxxxx) 与 Codex（AI 编程助手）共同创建。
 
 ## 所有权、商标与许可
 
